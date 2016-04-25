@@ -1,4 +1,5 @@
 import asyncio, json, sys
+import tanks
 from server import WSServer, Client
 
 
@@ -14,7 +15,7 @@ def validatePlayerInput(string):
     try:
         data = json.loads(string)
         if "dir" not in data or "fire" not in data: return None
-        if data["dir"] not in ["up", "down", "left", "right"]: return None
+        if data["dir"] not in ["up", "down", "left", "right", "pass"]: return None
         if data["fire"] not in [True, False]: return None
         return data
     except:
@@ -36,6 +37,9 @@ pr("Waiting for %s players..."%(PLAYERS))
 clients = loop.run_until_complete(waitForQ(PLAYERS))
 pr("Starting game...")
 
+
+tanksGame = tanks.TanksGame()
+
 while True:
     inputs = []
     for client in clients:
@@ -44,7 +48,8 @@ while True:
             data = validatePlayerInput(client.recv())
         inputs.append(data)
     pr(inputs)
-    changes = tanksGame.doTick(inputs)
+    changes = tanksGame.do_tick(inputs)
     changesS = json.dumps(changes)
+    pr(changesS)
     for client in clients:
         client.send(changesS)

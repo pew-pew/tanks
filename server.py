@@ -1,4 +1,5 @@
 import sys, asyncio, websockets
+import random
 
 def pr(*args, **kwargs):
     print(*args, **kwargs)
@@ -78,9 +79,9 @@ class WSServer:
     @asyncio.coroutine
     def connectionHandler(self, websocket, path):
         pr("Connected...", end=" ")
-        yield from websocket.send("Send your ID")
-        clientID = yield from websocket.recv()
-        pr("%s"%(clientID))
+        #yield from websocket.send("Send your ID")
+        clientID = random.randint(1, 13337)#yield from websocket.recv()
+        pr("%s"%(clientID)) # HAHAHHAHAHAHAHHAHAHHWADAWdjahsdkshawhdg
         
         if not self.onClientConnect(websocket, clientID):
             pr("Alredy connected -> drop"%(clientID))
