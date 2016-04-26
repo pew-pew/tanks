@@ -275,7 +275,7 @@ do_tick(0, commands, board)
 '''
 
 class TanksGame:
-    def __init__(self, players = 2, field = 'test_board.txt', coords = [{'x': 7, 'y': 7, 'dir': 'right'}, {'x': 27, 'y': 27, 'dir': 'left'}]):
+    def __init__(self, players = 2, field = 'test_board.txt', coords = [{'x': 7, 'y': 22, 'dir': 'right'}, {'x': 87, 'y': 52, 'dir': 'left'}]):
         file = open(field, 'r')
         cpvls = file.readlines()
         self.board = []
@@ -356,13 +356,13 @@ class TanksGame:
         for elem in localcopy.items():
             ans = dict()
             ans['dir'] = self.bullets[elem[1].id].dir
-            if not('action' in GAns['bullets'][elem[1].id]):
+            if not('bullets' in GAns):
                 ans['action'] = 'move'
             if self.tick % (Consts(self.coords).TICK_RATE // Consts(self.coords).BULLET_SPEED) == 0:
                 ans['move'] = 1
             else:
                 ans['move'] = 0
-            if not('action' in GAns['bullets'][elem[1].id]):
+            if not('bullets' in GAns):
                 GAns['bullets'][elem[1].id] = ans
             if ans['dir'] == 'left':
                 self.bullets[elem[1].id].x -= ans['move']
