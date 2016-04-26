@@ -6,7 +6,7 @@ from server import WSServer, Client
 HOST = "0.0.0.0"
 DEFAULT_PORT = 13337
 DEFAULT_PLAYERS = 1
-DEFAULT_FIELD = 'test_board.txt'
+DEFAULT_FIELD = 'mega_battlefield.txt'
 
 def pr(*args, **kwargs):
     print(*args, **kwargs)
