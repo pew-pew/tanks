@@ -319,13 +319,13 @@ class TanksGame:
                 self.tanks[i].die = True
                 for id in ans['kills']:
                     self.tanks[id].die = True
-                    self.tanks[id].death = Consts().DEATH_TIME()
+                    self.tanks[id].death = Consts(self.coords).DEATH_TIME
                     if i > id:
-                        GAns[id]['action'] = 'die'
-                        if 'move' in GAns[id]:
-                            GAns[id].pop('move')
-                        if 'dir' in GAns[id]:
-                            GAns[id].pop('dir')
+                        GAns['tanks'][id]['action'] = 'die'
+                        if 'move' in GAns['tanks'][id]:
+                            GAns['tanks'][id].pop('move')
+                        if 'dir' in GAns['tanks'][id]:
+                            GAns['tanks'][id].pop('dir')
                 self.tanks[i].x = self.tanks[i].consts.SPAWN_POINTS[i]['x']
                 self.tanks[i].y = self.tanks[i].consts.SPAWN_POINTS[i]['y']
                 self.tanks[i].untouch = self.tanks[i].consts.UNTOUCH_TIME
