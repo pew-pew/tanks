@@ -31,9 +31,9 @@ class TankAns:
         self.move['action'] = 'move'
         self.move['dir'] = dir
         self.move['move'] = move
-    def fnew_bullet(self, dir, x, y):
+    def fnew_bullet(self, dir, x, y, owner):
         self.new_bullet = dict()
-        
+        self.new_bullet['owner'] = owner
         self.new_bullet['action'] = 'spawn'
         self.new_bullet['dir'] = dir
         self.new_bullet['x'] = x
@@ -141,23 +141,24 @@ class Tank:
             self.dir = self.consts.SPAWN_POINTS[self.id]['dir']
             self.y = self.consts.SPAWN_POINTS[self.id]['y']
             self.untouch = self.consts.UNTOUCH_TIME
+            self.cooldown = 0
             return answer
         elif tick % (self.consts.TICK_RATE // self.consts.TANK_SPEED) == 0:
             answer = TankAns()
             if self.cooldown == 0 and commands['fire'] == True:
                 self.cooldown = self.consts.BULLET_COOLDOWN
                 if self.dir == 'up':
-                    bullets[curmaxid] = Bullet(curmaxid, self.x, self.y - 3, 'up', self.consts)
-                    answer.fnew_bullet('up', self.x, self.y - 4)
+                    bullets[curmaxid] = Bullet(curmaxid, self.x, self.y - 3, 'up', self.consts, self.id)
+                    answer.fnew_bullet('up', self.x, self.y - 4, self.id)
                 elif self.dir == 'down':
-                    bullets[curmaxid] = Bullet(curmaxid, self.x, self.y + 3, 'down', self.consts)
-                    answer.fnew_bullet('down', self.x, self.y + 4)
+                    bullets[curmaxid] = Bullet(curmaxid, self.x, self.y + 3, 'down', self.consts, self.id)
+                    answer.fnew_bullet('down', self.x, self.y + 4, self.id)
                 elif self.dir == 'left':
-                    bullets[curmaxid] = Bullet(curmaxid, self.x - 3, self.y, 'left', self.consts)
-                    answer.fnew_bullet('left', self.x - 4, self.y)
+                    bullets[curmaxid] = Bullet(curmaxid, self.x - 3, self.y, 'left', self.consts, self.id)
+                    answer.fnew_bullet('left', self.x - 4, self.y, self.id)
                 elif self.dir == 'right':
-                    bullets[curmaxid] = Bullet(curmaxid, self.x + 3, self.y, 'right', self.consts)
-                    answer.fnew_bullet('right', self.x + 4, self.y)
+                    bullets[curmaxid] = Bullet(curmaxid, self.x + 3, self.y, 'right', self.consts, self.id)
+                    answer.fnew_bullet('right', self.x + 4, self.y, self.id)
             if commands['dir'] == 'pass':
                 answer.set_move(self.dir, 0)
             else:
@@ -201,9 +202,10 @@ class Tank:
 
 
 class Bullet:
-    def __init__(self, id, x, y, dir, consts):
+    def __init__(self, id, x, y, dir, consts, owner):
         self.consts = consts
         self.id = id
+        self.owner = owner
         self.x = x
         self.y = y
         self.dir = dir
@@ -245,7 +247,7 @@ class Bullet:
                                 if board[x1][y1] == 2:
                                     breakobj.append([x1, y1])
             for tank in tanks:
-                if abs(tank.x - self.x) <= 2 and abs(tank.y - self.y) <= 2 and tank.untouch == 0 and tank.death == -1:
+                if abs(tank.x - self.x) <= 2 and abs(tank.y - self.y) <= 2 and tank.untouch == 0 and tank.death == -1 and tank.id != self.owner:
                     tag = 'tank'
                     breakobj = tank.id
                     
@@ -354,7 +356,9 @@ class TanksGame:
                            ans['x'] + (ans['dir'] == 'left') - (ans['dir'] == 'right'),
                            ans['y'] + (ans['dir'] == 'up') - (ans['dir'] == 'down'),
                            ans['dir'],
-                           Consts(self.coords))
+                           Consts(self.coords), ans['owner'])
+                    ans.pop('owner')
+                    GAns['bullets'][self.curmaxid] = ans
                     self.curmaxid += 1
         localcopy = copy.deepcopy(self.bullets)
         for elem in localcopy.items():
@@ -395,3 +399,5 @@ class TanksGame:
         return GAns
 #c = [{'dir': 'down', 'fire': False}, {'dir': 'up', 'fire': False}]
 #c = [{'dir': 'pass', 'fire': False}, {'dir': 'pass', 'fire': False}]
+#c = [{'dir': 'right', 'fire': False}, {'dir': 'pass', 'fire': False}]
+#c = [{'dir': 'right', 'fire': True}, {'dir': 'pass', 'fire': False}]
