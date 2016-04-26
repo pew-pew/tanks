@@ -38,13 +38,14 @@ class TankAns:
         self.new_bullet['dir'] = dir
         self.new_bullet['x'] = x
         self.new_bullet['y'] = y
-    def fspawn(self, id, dir, x, y):
+    def fspawn(self, id, dir, x, y, kills):
         self.spawn = dict()
         self.spawn['action'] = 'spawn'
         self.spawn['id'] = id
         self.spawn['dir'] = dir
         self.spawn['x'] = x
         self.spawn['y'] = y
+        self.spawn['kills'] = kills
 class BulletAns:
     def __init__(self):
         self.die = False
@@ -52,6 +53,7 @@ class BulletAns:
         self.destroy = dict()
         self.destroy['tank'] = None
         self.destroy['fill'] = None
+        self.spawn = None
     def set_move(self, dir, move):
         self.move['action'] = 'move'
         self.move['dir'] = dir
@@ -68,7 +70,6 @@ class BulletAns:
             d['y'] = elem[1]
             d['id'] = 0
             self.destroy['fill'].append(d)
-
 class Tank:
     def __init__(self, id, consts):
         self.consts = consts
@@ -131,7 +132,11 @@ class Tank:
             self.death -= 1
             answer = TankAns()
             answer.die = False
-            answer.fspawn(self.id, self.consts.SPAWN_POINTS[self.id]['dir'], self.consts.SPAWN_POINTS[self.id]['x'], self.consts.SPAWN_POINTS[self.id]['y'])
+            kills = []
+            for tank in tanks:
+                if abs(tank.x - self.x) <= 4 and abs(tank.y - self.y) <= 4 and tank.id != self.id:
+                    kills.append(tank.id)
+            answer.fspawn(self.id, self.consts.SPAWN_POINTS[self.id]['dir'], self.consts.SPAWN_POINTS[self.id]['x'], self.consts.SPAWN_POINTS[self.id]['y'], kills)
             self.x = self.consts.SPAWN_POINTS[self.id]['x']
             self.dir = self.consts.SPAWN_POINTS[self.id]['dir']
             self.y = self.consts.SPAWN_POINTS[self.id]['y']
@@ -143,16 +148,16 @@ class Tank:
                 self.cooldown = self.consts.BULLET_COOLDOWN
                 if self.dir == 'up':
                     bullets[curmaxid] = Bullet(curmaxid, self.x, self.y - 3, 'up', self.consts)
-                    answer.fnew_bullet('up', self.x, self.y - 3)
+                    answer.fnew_bullet('up', self.x, self.y - 4)
                 elif self.dir == 'down':
                     bullets[curmaxid] = Bullet(curmaxid, self.x, self.y + 3, 'down', self.consts)
-                    answer.fnew_bullet('down', self.x, self.y + 3)
+                    answer.fnew_bullet('down', self.x, self.y + 4)
                 elif self.dir == 'left':
                     bullets[curmaxid] = Bullet(curmaxid, self.x - 3, self.y, 'left', self.consts)
-                    answer.fnew_bullet('left', self.x - 3, self.y)
+                    answer.fnew_bullet('left', self.x - 4, self.y)
                 elif self.dir == 'right':
                     bullets[curmaxid] = Bullet(curmaxid, self.x + 3, self.y, 'right', self.consts)
-                    answer.fnew_bullet('right', self.x + 3, self.y)
+                    answer.fnew_bullet('right', self.x + 4, self.y)
             if commands['dir'] == 'pass':
                 answer.set_move(self.dir, 0)
             else:
@@ -305,11 +310,21 @@ class TanksGame:
             elif lans.spawn != None:
                 ans = lans.spawn
                 ans.pop('id')
-                GAns['tanks'].append(ans)
                 self.tanks[i].die = True
+                for id in ans['kills']:
+                    self.tanks[id].die = True
+                    self.tanks[id].death = Consts().DEATH_TIME()
+                    if i > id:
+                        GAns[id]['action'] = 'die'
+                        if 'move' in GAns[id]:
+                            GAns[id].pop('move')
+                        if 'dir' in GAns[id]:
+                            GAns[id].pop('dir')
                 self.tanks[i].x = self.tanks[i].consts.SPAWN_POINTS[i]['x']
                 self.tanks[i].y = self.tanks[i].consts.SPAWN_POINTS[i]['y']
                 self.tanks[i].untouch = self.tanks[i].consts.UNTOUCH_TIME
+                ans.pop('kills')
+                GAns['tanks'].append(ans)
             else:
                 ans = lans.move
                 mv = ans['move']
@@ -326,22 +341,29 @@ class TanksGame:
                     self.tanks[i].y += mv
                     self.tanks[i].dir = 'down'
                # print(i, self.tanks[i].x, self.tanks[i].y, ans['dir'], ans['move'])
+                #ans.pop('kills')
                 GAns['tanks'].append(ans)
                 ans = lans.new_bullet
                 if ans != None:
                     GAns['bullets'][self.curmaxid] = ans
-                    self.bullets[self.curmaxid] = Bullet(self.curmaxid, ans['x'], ans['y'], ans['dir'], Consts(self.coords))
+                    self.bullets[self.curmaxid] = Bullet(self.curmaxid,
+                           ans['x'] + (ans['dir'] == 'left') - (ans['dir'] == 'right'),
+                           ans['y'] + (ans['dir'] == 'up') - (ans['dir'] == 'down'),
+                           ans['dir'],
+                           Consts(self.coords))
                     self.curmaxid += 1
         localcopy = copy.deepcopy(self.bullets)
         for elem in localcopy.items():
             ans = dict()
             ans['dir'] = self.bullets[elem[1].id].dir
-            ans['action'] = 'move'
+            if not('action' in GAns['bullets'][elem[1].id]):
+                ans['action'] = 'move'
             if self.tick % (Consts(self.coords).TICK_RATE // Consts(self.coords).BULLET_SPEED) == 0:
                 ans['move'] = 1
             else:
                 ans['move'] = 0
-            GAns['bullets'][elem[1].id] = ans
+            if not('action' in GAns['bullets'][elem[1].id]):
+                GAns['bullets'][elem[1].id] = ans
             if ans['dir'] == 'left':
                 self.bullets[elem[1].id].x -= ans['move']
             if ans['dir'] == 'right':
@@ -368,4 +390,4 @@ class TanksGame:
         self.tick += 1
         return GAns
 #c = [{'dir': 'down', 'fire': False}, {'dir': 'up', 'fire': False}]
-#c = [{'dir': 'pass', 'fire': True}, {'dir': 'pass', 'fire': False}]
+#c = [{'dir': 'pass', 'fire': False}, {'dir': 'pass', 'fire': False}]
