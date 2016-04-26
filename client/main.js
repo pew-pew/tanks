@@ -165,7 +165,6 @@ Session = function(URI)
 	{
 		this.x = x;
 		this.y = y;
-		console.log(this)
 		this.type = type;
 		this.dir = 0;
 		this.width = 1;
@@ -239,66 +238,67 @@ Session = function(URI)
 	{
 		console.log("Connected!!!  !!")
 	}
-	var genOnServerMessage = function(me)
+	var onServerMessage = function(event)
 	{
-		return function(event)
+		//console.log("Message?")
+		//console.log(event)
+		var message = JSON.parse(event.data)
+		for (var i in message["tanks"])
 		{
-			//console.log("Message?")
-			//console.log(event)
-			var message = JSON.parse(event.data)
-			for (var i in message["tanks"])
+			if (message["tanks"][i]["action"] == "spawn")
 			{
-				if (message["tanks"][i]["action"] == "spawn")
+				this.tanks[i] = new this.Tank(i, message["tanks"][i]["x"], message["tanks"][i]["y"]);
+				this.tanks[i].dir = DIRS[message["tanks"][i]["dir"]];
+			}
+			else if (message["tanks"][i]["action"] == "die")
+			{
+				if (this.tanks[i] != false)
 				{
-					me.tanks[i] = new me.Tank(i, message["tanks"][i]["x"], message["tanks"][i]["y"]);
-					me.tanks[i].dir = DIRS[message["tanks"][i]["dir"]];
-				}
-				else if (message["tanks"][i]["action"] == "die")
-				{
-					me.tanks[i] = false;
-				}
-				else if (message["tanks"][i]["action"] == "move")
-				{
-					me.tanks[i].x += XMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
-					me.tanks[i].y += YMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
-					me.tanks[i].dir = DIRS[message["tanks"][i]["dir"]];
+					this.tanks[i] = false;
+					this.screenshake = 10;
 				}
 			}
-			if (message["field"] != undefined)
+			else if (message["tanks"][i]["action"] == "move")
 			{
-				me.tilemap = []
-				for (var i = 0; i < message["field"].length; i++)
-				{
-					me.tilemap[i] = []
-					for (var j = 0; j < message["field"][i].length; j++)
-					{
-						me.tilemap[i][j] = new me.Tile(parseInt(message["field"][i][j]), i, j, me);
-					}
-				}
+				this.tanks[i].x += XMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
+				this.tanks[i].y += YMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
+				this.tanks[i].dir = DIRS[message["tanks"][i]["dir"]];
 			}
-			for (var i = 0; i < message["blocks"].length; i++)
-			{
-				me.screenshake = 10;
-				me.tilemap[message["blocks"][i].x][message["blocks"][i].y].type = message["blocks"][i].id
-				if (message["blocks"][i].y > 0)
-				{
-					me.tilemap[message["blocks"][i].x][message["blocks"][i].y - 1].update = true
-				}
-				if (message["blocks"][i].y < me.tilemap[message["blocks"][i].x].length)
-				{
-					me.tilemap[message["blocks"][i].x][message["blocks"][i].y + 1].update = true
-				}
-				if (message["blocks"][i].x > 0)
-				{
-					me.tilemap[message["blocks"][i].x - 1][message["blocks"][i].y].update = true
-				}
-				if (message["blocks"][i].x < me.tilemap.length - 1)
-				{
-					me.tilemap[message["blocks"][i].x + 1][message["blocks"][i].y].update = true
-				}
-			}
-			me.draw();
 		}
+		if (message["field"] != undefined)
+		{
+			this.tilemap = []
+			for (var i = 0; i < message["field"].length; i++)
+			{
+				this.tilemap[i] = []
+				for (var j = 0; j < message["field"][i].length; j++)
+				{
+					this.tilemap[i][j] = new this.Tile(parseInt(message["field"][i][j]), i, j, this);
+				}
+			}
+		}
+		for (var i = 0; i < message["blocks"].length; i++)
+		{
+			this.screenshake = 5;
+			this.tilemap[message["blocks"][i].x][message["blocks"][i].y].type = message["blocks"][i].id
+			if (message["blocks"][i].y > 0)
+			{
+				this.tilemap[message["blocks"][i].x][message["blocks"][i].y - 1].update = true
+			}
+			if (message["blocks"][i].y < this.tilemap[message["blocks"][i].x].length)
+			{
+				this.tilemap[message["blocks"][i].x][message["blocks"][i].y + 1].update = true
+			}
+			if (message["blocks"][i].x > 0)
+			{
+				this.tilemap[message["blocks"][i].x - 1][message["blocks"][i].y].update = true
+			}
+			if (message["blocks"][i].x < this.tilemap.length - 1)
+			{
+				this.tilemap[message["blocks"][i].x + 1][message["blocks"][i].y].update = true
+			}
+		}
+		this.draw();
 	}
 	
 	var onServerError = function(event)
@@ -316,84 +316,55 @@ Session = function(URI)
 	
 	this.serverconn = new WebSocket(URI);
 	this.serverconn.onopen = onServerOpen;
-	this.serverconn.onmessage = genOnServerMessage(this);
+	this.serverconn.onmessage = onServerMessage.bind(this);
 	this.serverconn.onerror = onServerError;
 	this.serverconn.onclose = onServerClose;
 	
 	// Buttons that you press
 	
-	this.keymask = {'ArrowUp': false, 'ArrowDown': false, 'ArrowLeft': false, 'ArrowRight': false, ' ': false}
+	this.keymask = {38: false, 40: false, 37: false, 39: false, 32: false}
 	this.lastkey = 'NoArrow';
-	this.keysend = {'ArrowUp': 'up', 'ArrowDown': 'down', 'ArrowLeft': 'left', 'ArrowRight': 'right', 'NoArrow': 'pass'}
+	this.keysend = {38: 'up', 40: 'down', 37: 'left', 39: 'right', 0: 'pass'}
 	this.lastsend = 'NoArrow';
 	
-	this.genUpdateKeys = function(me)
+	this.updateKeys = function(event)
 	{
-		return function(event)
+		console.log(event)
+		if (this.keymask.hasOwnProperty(event.keyCode))
 		{
-			if (me.keymask.hasOwnProperty(event.key))
+			if (event.type == "keydown" ^ this.keymask[event.keyCode])
 			{
-				if (event.type == "keydown" ^ me.keymask[event.key])
+				//console.log("!")
+				this.keymask[event.keyCode] = !this.keymask[event.keyCode]
+				if (event.keyCode == this.lastkey)
 				{
-					//console.log("!")
-					me.keymask[event.key] = !me.keymask[event.key]
-					if (event.key == me.lastkey)
+					this.lastkey = 0;
+					for (var key in this.keymask)
 					{
-						me.lastkey = 'NoArrow';
-						for (var key in me.keymask)
+						if (this.keymask[key] && key != 32)
 						{
-							if (me.keymask[key] && key != ' ')
-							{
-								me.lastkey = key;
-								break;
-							}
+							this.lastkey = key;
+							break;
 						}
 					}
-					if (event.key != ' ' && event.type == 'keydown')
-					{
-						me.lastkey = event.key;
-					}
-					if (me.lastkey != me.lastsend || event.key == ' ')
-					{
-						me.serverconn.send(JSON.stringify({'dir': me.keysend[me.lastkey], 'fire': me.keymask[' ']}));
-						console.log(JSON.stringify({'dir': me.keysend[me.lastkey], 'fire': me.keymask[' ']}));
-						me.lastsend = me.lastkey;
-					}
+				}
+				if (event.keyCode != 32 && event.type == 'keydown')
+				{
+					this.lastkey = event.keyCode;
+				}
+				if (this.lastkey != this.lastsend || event.keyCode == 32)
+				{
+					this.serverconn.send(JSON.stringify({'dir': this.keysend[this.lastkey], 'fire': this.keymask[32]}));
+					console.log(JSON.stringify({'dir': this.keysend[this.lastkey], 'fire': this.keymask[32]}));
+					this.lastsend = this.lastkey;
 				}
 			}
 		}
 	}
 	
-	addEventListener("keydown", this.genUpdateKeys(this));
-	addEventListener("keyup", this.genUpdateKeys(this));
+	addEventListener("keydown", this.updateKeys.bind(this));
+	addEventListener("keyup", this.updateKeys.bind(this));
 	
 }
 ses = new Session("ws://127.0.0.1:13337");
 ses.draw();
-
-rotate = function()
-{
-	for (var tank in ses.tanks)
-	{
-		//console.log("Tanks: {0}/{1}".format(tankspritesnow, tankspritesready))
-		//console.log("Tiles: {0}/{1}".format(tilespritesnow, tilespritesready))
-		ses.tanks[tank].dir+= 1;
-		//ses.tanks[tank].x += 0.05;
-	}
-	ses.draw();
-}
-
-var red = false
-/*addEventListener("keypress", function()
-{
-	if (!red)
-	{
-		//red = true;
-		//rotate();
-		setInterval(rotate, 20);
-	}
-	else
-	{
-		ses.screenshake = 20;
-	}
-})*/
