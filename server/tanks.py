@@ -40,7 +40,7 @@ class TankAns:
         self.new_bullet['y'] = y
     def fspawn(self, id, dir, x, y):
         self.spawn = dict()
-        self.spawn['action'] = 'spwan'
+        self.spawn['action'] = 'spawn'
         self.spawn['id'] = id
         self.spawn['dir'] = dir
         self.spawn['x'] = x
