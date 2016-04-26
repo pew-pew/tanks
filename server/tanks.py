@@ -275,15 +275,19 @@ do_tick(0, commands, board)
 '''
 
 class TanksGame:
-    def __init__(self, players = 2, field = 'test_board.txt', coords = [{'x': 7, 'y': 22, 'dir': 'right'}, {'x': 87, 'y': 52, 'dir': 'left'}]):
+    def __init__(self, players = 2, field = 'mega_battlefield.txt', coords = [{'x': 7, 'y': 22, 'dir': 'right'}, {'x': 87, 'y': 52, 'dir': 'left'}]):
         file = open(field, 'r')
         cpvls = file.readlines()
-        self.board = []
+        self.rboard = []
         self.players = players
         for i in range(len(cpvls)):
-            self.board.append([])
+            self.rboard.append([])
             for j in range(len(cpvls[i].rstrip())):
-                self.board[-1].append(int(cpvls[i][j]))
+                self.rboard[-1].append(int(cpvls[i][j]))
+        self.board = [[0 for j in range(len(cpvls))] for i in range(len(cpvls[0].rstrip()))]
+        for i in range(len(cpvls)):
+            for j in range(len(cpvls[0].rstrip())):
+                self.board[j][i] = self.rboard[i][j]
         self.lives = [3 for i in range(self.players)]
         self.tanks = [Tank(i, Consts(coords)) for i in range(self.players)]
         self.bullets = dict()
@@ -356,13 +360,13 @@ class TanksGame:
         for elem in localcopy.items():
             ans = dict()
             ans['dir'] = self.bullets[elem[1].id].dir
-            if not('bullets' in GAns):
+            if GAns['bullets'] == dict():
                 ans['action'] = 'move'
             if self.tick % (Consts(self.coords).TICK_RATE // Consts(self.coords).BULLET_SPEED) == 0:
                 ans['move'] = 1
             else:
                 ans['move'] = 0
-            if not('bullets' in GAns):
+            if GAns['bullets'] == dict():
                 GAns['bullets'][elem[1].id] = ans
             if ans['dir'] == 'left':
                 self.bullets[elem[1].id].x -= ans['move']
