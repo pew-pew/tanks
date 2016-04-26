@@ -23,7 +23,7 @@ class Consts:
 
 class TankAns:
     def __init__(self):
-        self.dye = False
+        self.die = False
         self.move = dict()
         self.spawn = None
         self.new_bullet = None
@@ -47,7 +47,7 @@ class TankAns:
         self.spawn['y'] = y
 class BulletAns:
     def __init__(self):
-        self.dye = False
+        self.die = False
         self.move = dict()
         self.destroy = dict()
         self.destroy['tank'] = None
@@ -57,10 +57,10 @@ class BulletAns:
         self.move['dir'] = dir
         self.move['move'] = move
     def destroy_tank(self, id):
-        self.dye = True
+        self.die = True
         self.destroy['tank'] = id
     def destroy_fill(self, kl):
-        self.dye = True
+        self.die = True
         self.destroy['fill'] = []
         for elem in kl:
             d = dict()
@@ -88,7 +88,7 @@ class Tank:
                 flag = False
         for tank in tanks:
             for y1 in range(self.y - 4, self.y + 5):
-                if tank.x == self.x + 5 and tank.y == y1:
+                if tank.x == self.x + 5 and tank.y == y1 and tank.untouch == 0 and tank.death == -1:
                     flag = False        
         return flag
     def can_left(self, board, tanks):
@@ -98,7 +98,7 @@ class Tank:
                 flag = False
         for tank in tanks:
             for y1 in range(self.y - 4, self.y + 5):
-                if tank.x == self.x - 5 and tank.y == y1:
+                if tank.x == self.x - 5 and tank.y == y1 and tank.untouch == 0 and tank.death == -1:
                     flag = False
         return flag
     def can_up(self, board, tanks):
@@ -108,7 +108,7 @@ class Tank:
                 flag = False
         for tank in tanks:
             for x1 in range(self.x - 4, self.x + 5):
-                if tank.x == x1 and tank.y == self.y - 5:
+                if tank.x == x1 and tank.y == self.y - 5 and tank.untouch == 0 and tank.death == -1:
                     flag = False
         return flag
     def can_down(self, board, tanks):
@@ -118,19 +118,19 @@ class Tank:
                 flag = False
         for tank in tanks:
             for x1 in range(self.x - 4, self.x + 5):
-                if tank.x == x1 and tank.y == self.y + 5:
+                if tank.x == x1 and tank.y == self.y + 5 and tank.untouch == 0 and tank.death == -1:
                     flag = False
         return flag
     def do_tick(self, tick, commands, board, tanks, bullets, curmaxid):
         if self.death > 0:
             self.death -= 1
             answer = TankAns()
-            answer.dye = True
+            answer.die = True
             return answer
         elif self.death == 0:
             self.death -= 1
             answer = TankAns()
-            answer.dye = False
+            answer.die = False
             answer.fspawn(self.id, self.consts.SPAWN_POINTS[self.id]['dir'], self.consts.SPAWN_POINTS[self.id]['x'], self.consts.SPAWN_POINTS[self.id]['y'])
             self.x = self.consts.SPAWN_POINTS[self.id]['x']
             self.dir = self.consts.SPAWN_POINTS[self.id]['dir']
@@ -240,7 +240,7 @@ class Bullet:
                                 if board[x1][y1] == 2:
                                     breakobj.append([x1, y1])
             for tank in tanks:
-                if abs(tank.x - self.x) <= 2 and abs(tank.y - self.y) <= 2:
+                if abs(tank.x - self.x) <= 2 and abs(tank.y - self.y) <= 2 and tank.untouch == 0 and tank.death == -1:
                     tag = 'tank'
                     breakobj = tank.id
                     
@@ -280,7 +280,7 @@ class TanksGame:
             for j in range(len(cpvls[i].rstrip())):
                 self.board[-1].append(int(cpvls[i][j]))
         self.lives = [3 for i in range(self.players)]
-        self.tanks = [Tank(i, Consts(coords)) for i in range(2)]
+        self.tanks = [Tank(i, Consts(coords)) for i in range(self.players)]
         self.bullets = dict()
         self.curmaxid = 1
         self.tick = 0
@@ -292,21 +292,21 @@ class TanksGame:
         GAns['blocks'] = []
         if self.tick == 0:
             GAns['field'] = copy.deepcopy(self.board)
-            GAns['coords'] = self.coords
+            #GAns['coords'] = self.coords
         for i in range(self.players):
             lans = self.tanks[i].do_tick(self.tick, commands[i], self.board, self.tanks, self.bullets, self.curmaxid)
-            if lans.dye == True:
+            if lans.die == True:
                 if self.tanks[i].death == Consts(self.coords).DEATH_TIME:
                     self.lives[i] -= 1
                     if self.lives[i] == 0:
                         tank_lose(i)
-                GAns['tanks'].append({'action': 'dye'})
-                self.tanks[i].dye = True
+                GAns['tanks'].append({'action': 'die'})
+                self.tanks[i].die = True
             elif lans.spawn != None:
                 ans = lans.spawn
                 ans.pop('id')
                 GAns['tanks'].append(ans)
-                self.tanks[i].dye = True
+                self.tanks[i].die = True
                 self.tanks[i].x = self.tanks[i].consts.SPAWN_POINTS[i]['x']
                 self.tanks[i].y = self.tanks[i].consts.SPAWN_POINTS[i]['y']
                 self.tanks[i].untouch = self.tanks[i].consts.UNTOUCH_TIME
@@ -353,7 +353,7 @@ class TanksGame:
            # for elem in self.bullets.items():
            #     print(elem[1].id, elem[1].x, elem[1].y, elem[1].dir)                
             lans = elem[1].do_tick(self.tick, commands, self.board, self.tanks)
-            if lans.dye == True:
+            if lans.die == True:
                 ans = lans.destroy
                # print(ans)
                 if ans['fill'] != None:
@@ -364,7 +364,7 @@ class TanksGame:
                     id = ans['tank']
                     self.tanks[id].death = Consts(self.coords).DEATH_TIME
                 self.bullets.pop(elem[1].id)
-                GAns['bullets'][elem[1].id] = {'action' : 'dye'}
+                GAns['bullets'][elem[1].id] = {'action' : 'die'}
         self.tick += 1
         return GAns
 #c = [{'dir': 'down', 'fire': False}, {'dir': 'up', 'fire': False}]
