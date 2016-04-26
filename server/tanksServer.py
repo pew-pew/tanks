@@ -80,9 +80,10 @@ tanksGame = tanks.TanksGame(players = 1, field = FIELD)
 while True:
     inputs = []
     for client in clients:
-        data = validatePlayerInput(client.recv())
-        while data == None:
-            data = validatePlayerInput(client.recv())
+        if client.lastMessage == None:
+            data = {"dir": "pass", "fire": False}
+        else:
+            data = validatePlayerInput(client.lastMessage)
         inputs.append(data)
     pr(inputs)
     changes = tanksGame.do_tick(inputs)
@@ -90,3 +91,7 @@ while True:
     pr(changesS)
     for client in clients:
         client.send(changesS)
+    
+    
+    loop.run_until_complete(asyncio.sleep(1 / tanks.Consts(tanksGame.coords).TICK_RATE, loop=loop))
+    

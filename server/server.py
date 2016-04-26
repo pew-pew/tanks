@@ -39,8 +39,8 @@ class Client:
         return True
     
     def recv(self):
-        self.lastMessage = None
-        self.server.loop.run_until_complete(self.waitForMessageCoro())
+        #self.server.loop.run_until_complete(self.waitForMessageCoro())
+        #message = self.lastMessage
         return self.lastMessage
 
 class WSServer:
