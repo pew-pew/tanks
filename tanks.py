@@ -268,14 +268,15 @@ do_tick(0, commands, board)
 '''
 
 class TanksGame:
-    def __init__(self, file = open('test_board.txt', 'r'), coords = [{'x': 7, 'y': 7, 'dir': 'right'}, {'x': 27, 'y': 27, 'dir': 'left'}]):
+    def __init__(self, players = 2, file = open('test_board.txt', 'r'), coords = [{'x': 7, 'y': 7, 'dir': 'right'}, {'x': 27, 'y': 27, 'dir': 'left'}]):
         cpvls = file.readlines()
         self.board = []
+        self.players = players
         for i in range(len(cpvls)):
             self.board.append([])
             for j in range(len(cpvls[i].rstrip())):
                 self.board[-1].append(int(cpvls[i][j]))
-        self.lives = [3 for i in range(2)]
+        self.lives = [3 for i in range(self.players)]
         self.tanks = [Tank(i, Consts(coords)) for i in range(2)]
         self.bullets = dict()
         self.curmaxid = 1
@@ -289,7 +290,7 @@ class TanksGame:
         if self.tick == 0:
             GAns['field'] = copy.deepcopy(self.board)
             GAns['coords'] = self.coords
-        for i in range(2):
+        for i in range(self.players):
             lans = self.tanks[i].do_tick(self.tick, commands[i], self.board, self.tanks, self.bullets, self.curmaxid)
             if lans.dye == True:
                 if self.tanks[i].death == Consts(self.coords).DEATH_TIME:
