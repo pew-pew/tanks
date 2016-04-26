@@ -95,10 +95,6 @@ Session = function(URI)
 		// Rotation!
 		context.translate(x + this.x * CELL_SIZE, y + this.y * CELL_SIZE);
 		context.rotate(this.dir * Math.PI / 180);
-		if (this.skin.width != 8)
-		{
-			console.log(this.skin.width);
-		}
 		// Fancy 3D - drawing several layers on top of each other
 		for (var i = 0; i < (this.skin.width / (this.width * CELL_SIZE)); i++)
 		{
@@ -169,6 +165,7 @@ Session = function(URI)
 	{
 		this.x = x;
 		this.y = y;
+		console.log(this)
 		this.type = type;
 		this.dir = 0;
 		this.width = 1;
@@ -201,7 +198,7 @@ Session = function(URI)
 		this.draw = drawsprite;
 	}
 	
-	this.tanks = [new this.Tank(0, 10, 10), new this.Tank(1, 20, 10), new this.Tank(2, 30, 10), new this.Tank(3, 40, 10)]
+	this.tanks = []
 	var me = this;
 	
 	this.screenshake = 0;
@@ -246,8 +243,8 @@ Session = function(URI)
 	{
 		return function(event)
 		{
-			console.log("Message?")
-			console.log(event)
+			//console.log("Message?")
+			//console.log(event)
 			var message = JSON.parse(event.data)
 			for (var i in message["tanks"])
 			{
@@ -265,6 +262,39 @@ Session = function(URI)
 					me.tanks[i].x += XMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
 					me.tanks[i].y += YMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
 					me.tanks[i].dir = DIRS[message["tanks"][i]["dir"]];
+				}
+			}
+			if (message["field"] != undefined)
+			{
+				me.tilemap = []
+				for (var i = 0; i < message["field"].length; i++)
+				{
+					me.tilemap[i] = []
+					for (var j = 0; j < message["field"][i].length; j++)
+					{
+						me.tilemap[i][j] = new me.Tile(parseInt(message["field"][i][j]), i, j, me);
+					}
+				}
+			}
+			for (var i = 0; i < message["blocks"].length; i++)
+			{
+				me.screenshake = 10;
+				me.tilemap[message["blocks"][i].x][message["blocks"][i].y].type = message["blocks"][i].id
+				if (message["blocks"][i].y > 0)
+				{
+					me.tilemap[message["blocks"][i].x][message["blocks"][i].y - 1].update = true
+				}
+				if (message["blocks"][i].y < me.tilemap[message["blocks"][i].x].length)
+				{
+					me.tilemap[message["blocks"][i].x][message["blocks"][i].y + 1].update = true
+				}
+				if (message["blocks"][i].x > 0)
+				{
+					me.tilemap[message["blocks"][i].x - 1][message["blocks"][i].y].update = true
+				}
+				if (message["blocks"][i].x < me.tilemap.length - 1)
+				{
+					me.tilemap[message["blocks"][i].x + 1][message["blocks"][i].y].update = true
 				}
 			}
 			me.draw();
