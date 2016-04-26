@@ -87,7 +87,7 @@ class Tank:
             if (board[self.x + 3][y1] != 0):
                 flag = False
         for tank in tanks:
-            for y1 in range(self.y - 5, self.y + 6):
+            for y1 in range(self.y - 4, self.y + 5):
                 if tank.x == self.x + 5 and tank.y == y1:
                     flag = False        
         return flag
@@ -97,7 +97,7 @@ class Tank:
             if (board[self.x - 3][y1] != 0):
                 flag = False
         for tank in tanks:
-            for y1 in range(self.y - 5, self.y + 6):
+            for y1 in range(self.y - 4, self.y + 5):
                 if tank.x == self.x - 5 and tank.y == y1:
                     flag = False
         return flag
@@ -107,7 +107,7 @@ class Tank:
             if (board[x1][self.y - 3] != 0):
                 flag = False
         for tank in tanks:
-            for x1 in range(self.x - 5, self.x + 6):
+            for x1 in range(self.x - 4, self.x + 5):
                 if tank.x == x1 and tank.y == self.y - 5:
                     flag = False
         return flag
@@ -117,7 +117,7 @@ class Tank:
             if (board[x1][self.y + 3] != 0):
                 flag = False
         for tank in tanks:
-            for x1 in range(self.x - 5, self.x + 6):
+            for x1 in range(self.x - 4, self.x + 5):
                 if tank.x == x1 and tank.y == self.y + 5:
                     flag = False
         return flag
@@ -185,10 +185,12 @@ class Tank:
                     else:
                         answer.set_move(commands['dir'], 0)
             self.untouch = max(self.untouch - 1, 0)
+            self.cooldown = max(self.cooldown - 1, 0)
             return answer
         else:
             answer = TankAns()
             answer.set_move(self.dir, 0)
+            self.cooldown = max(self.cooldown - 1, 0)
             self.untouch = max(self.untouch - 1, 0)
             return answer
 
@@ -282,7 +284,7 @@ class TanksGame:
         self.bullets = dict()
         self.curmaxid = 1
         self.tick = 0
-        self.coords = coords
+        self.coords = coords[:players]
     def do_tick(self, commands):
         GAns = dict()
         GAns['tanks'] = [] 
