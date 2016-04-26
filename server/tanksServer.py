@@ -75,7 +75,7 @@ clients = loop.run_until_complete(waitForQ(PLAYERS))
 pr("Starting game...")
 
 
-tanksGame = tanks.TanksGame(players = 1, field = field)
+tanksGame = tanks.TanksGame(players = 1, field = FIELD)
 
 while True:
     inputs = []
