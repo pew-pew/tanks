@@ -364,13 +364,13 @@ class TanksGame:
         for elem in localcopy.items():
             ans = dict()
             ans['dir'] = self.bullets[elem[1].id].dir
-            if GAns['bullets'] == dict():
+            if not(elem[1].id in GAns['bullets']):
                 ans['action'] = 'move'
             if self.tick % (Consts(self.coords).TICK_RATE // Consts(self.coords).BULLET_SPEED) == 0:
                 ans['move'] = 1
             else:
                 ans['move'] = 0
-            if GAns['bullets'] == dict():
+            if not(elem[1].id in GAns['bullets']):
                 GAns['bullets'][elem[1].id] = ans
             if ans['dir'] == 'left':
                 self.bullets[elem[1].id].x -= ans['move']
