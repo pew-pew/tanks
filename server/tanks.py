@@ -287,7 +287,7 @@ class TanksGame:
         GAns = dict()
         GAns['tanks'] = [] 
         GAns['bullets'] = dict()
-        GAns['field'] = []
+        GAns['blocks'] = []
         if self.tick == 0:
             GAns['field'] = copy.deepcopy(self.board)
             GAns['coords'] = self.coords
@@ -355,7 +355,7 @@ class TanksGame:
                 ans = lans.destroy
                # print(ans)
                 if ans['fill'] != None:
-                    GAns['field'] = ans['fill']
+                    GAns['blocks'] = ans['fill']
                     for elem2 in ans['fill']:
                         self.board[elem2['x']][elem2['y']] = elem2['id']
                 elif ans['tank'] != None:
