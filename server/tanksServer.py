@@ -5,7 +5,7 @@ from server import WSServer, Client
 
 HOST = "localhost"
 PORT = 13337
-PLAYERS = 2
+PLAYERS = 1
 
 def pr(*args, **kwargs):
     print(*args, **kwargs)
@@ -38,7 +38,7 @@ clients = loop.run_until_complete(waitForQ(PLAYERS))
 pr("Starting game...")
 
 
-tanksGame = tanks.TanksGame()
+tanksGame = tanks.TanksGame(players = 1)
 
 while True:
     inputs = []
