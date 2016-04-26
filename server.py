@@ -10,6 +10,8 @@ class Client:
         self.server = server
         self.id = id
         self.websocket = websocket
+        
+        self.lastMessage = None
     
     def __repr__(self):
         return "Client %s"%(self.id)
@@ -25,6 +27,11 @@ class Client:
         while not self.isConnected():
             yield from asyncio.sleep(0, loop=self.server.loop)
     
+    @asyncio.coroutine
+    def waitForMessageCoro(self):
+        while self.lastMessage == None:
+            yield from asyncio.sleep(0, loop=self.server.loop)
+    
     def send(self, data):
         self.server.loop.run_until_complete(self.waitForConnectionCoro())
         coro = self.websocket.send(data)
@@ -32,15 +39,9 @@ class Client:
         return True
     
     def recv(self):
-        data = False
-        while data == False:
-            try:
-                coro = self.websocket.recv()
-                data = self.server.loop.run_until_complete(coro)
-            except:
-                data = False
-            self.server.loop.run_until_complete(self.waitForConnectionCoro())
-        return data
+        self.lastMessage = None
+        self.server.loop.run_until_complete(self.waitForMessageCoro())
+        return self.lastMessage
 
 class WSServer:
     def __init__(self, host="localhost", port=13337, loop=None):
@@ -91,7 +92,8 @@ class WSServer:
         
         try:
             while True and client.isConnected():
-                yield from asyncio.sleep(0, loop=self.loop)
+                data = yield from websocket.recv()
+                client.lastMessage = data
         except Exception as e:
             pr("Exception:\n%s"%(e))
         finally:
