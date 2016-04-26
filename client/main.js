@@ -16,6 +16,10 @@ CELL_SIZE = 8;
 
 SKINS_NO = 4;
 
+TANK_INTERVAL = 2
+
+BULLET_INTERVAL = 1
+
 DIRS = {"up": 0,
 		"right": 90,
 		"down": 180,
@@ -52,6 +56,18 @@ for (var i = 0; i < SKINS_NO; i++)
 	tanksprites[i].src = TANK_SPRITE_PATH.format(i);
 }
 
+BULLET_SPRITE_PATH = "./images/bullet.png";
+
+bulletspritesready = 1;
+bulletspritesnow = 0;
+
+bulletsprite = new Image();
+bulletsprite.onload = function()
+{
+	bulletspritesnow++;
+};
+bulletsprite.src = BULLET_SPRITE_PATH;
+	
 // Load tile graphics
 
 // Tile sprite bitmask cheat sheet:
@@ -93,7 +109,7 @@ Session = function(URI)
 	drawsprite = function(context, x, y)
 	{
 		// Rotation!
-		context.translate(x + this.x * CELL_SIZE, y + this.y * CELL_SIZE);
+		context.translate(x + (this.interpolx + this.x) * CELL_SIZE, y + (this.interpoly + this.y) * CELL_SIZE);
 		context.rotate(this.dir * Math.PI / 180);
 		// Fancy 3D - drawing several layers on top of each other
 		for (var i = 0; i < (this.skin.width / (this.width * CELL_SIZE)); i++)
@@ -107,7 +123,7 @@ Session = function(URI)
 			context.rotate(this.dir * Math.PI / 180);
 		}
 		context.rotate(-this.dir * Math.PI / 180);
-		context.translate(- x - this.x * CELL_SIZE, - y - this.y * CELL_SIZE + this.skin.width / (this.width * CELL_SIZE));
+		context.translate(- x - (this.interpolx + this.x) * CELL_SIZE, - y - (this.interpoly + this.y) * CELL_SIZE + this.skin.width / (this.width * CELL_SIZE));
 	}
 	
 	// Drawing functions: drawsimplesprite draws sprite by its skin, but without fancy stuff - might fix everything
@@ -191,13 +207,28 @@ Session = function(URI)
 		this.x = x;
 		this.y = y;
 		this.dir = 90;
+		this.dirto = 90;
 		this.width = 5;
 		this.height = 5;
 		this.skin = tanksprites[no];
 		this.draw = drawsprite;
 	}
 	
+	this.Bullet = function(no, x, y)
+	{
+		this.interpolx = 0;
+		this.interpoly = 0;
+		this.x = x;
+		this.y = y;
+		this.dir = 0;
+		this.width = 1;
+		this.height = 1;
+		this.skin = bulletsprite;
+		this.draw = drawsprite;
+	}
+	
 	this.tanks = []
+	this.bullets = {}
 	var me = this;
 	
 	this.screenshake = 0;
@@ -225,7 +256,34 @@ Session = function(URI)
 			{
 				if (this.tanks[tanknow].y == ynow)
 				{
+					this.tanks[tanknow].interpolx = Math.sign(this.tanks[tanknow].interpolx) * Math.max(0, Math.abs(this.tanks[tanknow].interpolx) - 1 / TANK_INTERVAL)
+					this.tanks[tanknow].interpoly = Math.sign(this.tanks[tanknow].interpoly) * Math.max(0, Math.abs(this.tanks[tanknow].interpoly) - 1 / TANK_INTERVAL)
+					if (this.tanks[tanknow].dir == this.tanks[tanknow].dirto)
+					{
+					}
+					else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 > 180)
+					{
+						this.tanks[tanknow].dir = (this.tanks[tanknow].dir - 90 / TANK_INTERVAL + 360) % 360
+					}
+					else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 < 180)
+					{
+						this.tanks[tanknow].dir = (this.tanks[tanknow].dir + 90 / TANK_INTERVAL + 360) % 360
+					}
+					else
+					{
+						this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
+					}
+					console.log(this.tanks[tanknow].dir);
 					this.tanks[tanknow].draw(this.context, scrx, scry);
+				}
+			}
+			for (var bulletnow in this.bullets)
+			{
+				if (this.bullets[bulletnow].y == ynow)
+				{
+					this.bullets[bulletnow].interpolx = Math.sign(this.bullets[bulletnow].interpolx) * Math.max(0, Math.abs(this.bullets[bulletnow].interpolx) - 1 / BULLET_INTERVAL)
+					this.bullets[bulletnow].interpoly = Math.sign(this.bullets[bulletnow].interpoly) * Math.max(0, Math.abs(this.bullets[bulletnow].interpoly) - 1 / BULLET_INTERVAL)
+					this.bullets[bulletnow].draw(this.context, scrx, scry);
 				}
 			}
 		}
@@ -248,7 +306,7 @@ Session = function(URI)
 			if (message["tanks"][i]["action"] == "spawn")
 			{
 				this.tanks[i] = new this.Tank(i, message["tanks"][i]["x"], message["tanks"][i]["y"]);
-				this.tanks[i].dir = DIRS[message["tanks"][i]["dir"]];
+				this.tanks[i].dirto = DIRS[message["tanks"][i]["dir"]];
 			}
 			else if (message["tanks"][i]["action"] == "die")
 			{
@@ -262,7 +320,32 @@ Session = function(URI)
 			{
 				this.tanks[i].x += XMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
 				this.tanks[i].y += YMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
-				this.tanks[i].dir = DIRS[message["tanks"][i]["dir"]];
+				this.tanks[i].interpolx -= XMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
+				this.tanks[i].interpoly -= YMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
+				this.tanks[i].dirto = DIRS[message["tanks"][i]["dir"]];
+			}
+		}
+		for (var i in message["bullets"])
+		{
+			if (message["bullets"][i]["action"] == "spawn")
+			{
+				this.bullets[i] = new this.Bullet(i, message["bullets"][i]["x"], message["bullets"][i]["y"]);
+				this.bullets[i].dir = DIRS[message["bullets"][i]["dir"]];
+			}
+			else if (message["bullets"][i]["action"] == "die")
+			{
+				if (this.bullets[i] != false)
+				{
+					delete this.bullets[i];
+				}
+			}
+			else if (message["bullets"][i]["action"] == "move")
+			{
+				this.bullets[i].x += XMOVES[message["bullets"][i]["dir"]] * message["bullets"][i]["move"];
+				this.bullets[i].y += YMOVES[message["bullets"][i]["dir"]] * message["bullets"][i]["move"];
+				this.bullets[i].interpolx -= XMOVES[message["bullets"][i]["dir"]] * message["bullets"][i]["move"];
+				this.bullets[i].interpoly -= YMOVES[message["bullets"][i]["dir"]] * message["bullets"][i]["move"];
+				this.bullets[i].dir = DIRS[message["bullets"][i]["dir"]];
 			}
 		}
 		if (message["field"] != undefined)
@@ -323,18 +406,16 @@ Session = function(URI)
 	// Buttons that you press
 	
 	this.keymask = {38: false, 40: false, 37: false, 39: false, 32: false}
-	this.lastkey = 'NoArrow';
+	this.lastkey = 0;
 	this.keysend = {38: 'up', 40: 'down', 37: 'left', 39: 'right', 0: 'pass'}
-	this.lastsend = 'NoArrow';
+	this.lastsend = 0;
 	
 	this.updateKeys = function(event)
 	{
-		console.log(event)
 		if (this.keymask.hasOwnProperty(event.keyCode))
 		{
 			if (event.type == "keydown" ^ this.keymask[event.keyCode])
 			{
-				//console.log("!")
 				this.keymask[event.keyCode] = !this.keymask[event.keyCode]
 				if (event.keyCode == this.lastkey)
 				{
