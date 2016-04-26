@@ -1,11 +1,12 @@
-import asyncio, json, sys
+import asyncio, json, sys, getopt
 import tanks
 from server import WSServer, Client
 
 
-HOST = "localhost"
-PORT = 13337
-PLAYERS = 1
+HOST = "0.0.0.0"
+DEFAULT_PORT = 13337
+DEFAULT_PLAYERS = 1
+DEFAULT_FIELD = 'test_board.txt'
 
 def pr(*args, **kwargs):
     print(*args, **kwargs)
@@ -28,6 +29,42 @@ def waitForQ(q):
     clients = list(server.connected.values())[:q]
     return clients
 
+
+PORT = None
+PLAYERS = None
+FIELD = None
+
+try:
+    flags = getopt.getopt(sys.argv[1:],"hp:n:f:",["help", "port=","players=","field="])
+except getopt.GetoptError:
+    flags = [[('-h', '')]]
+for flag, value in flags[0]:
+    if flag in ("-h", "--help"):
+        pr("Usage:")
+        pr("    -p, --port: port used for hosting")
+        pr("    -n, --players: player number")
+        pr("    -f, --field: field file address")
+        sys.exit(0)
+    elif flag in ("-p", "--port"):
+        PORT = int(value)
+        pr("Detected port %s"%value)
+    elif flag in ("-n", "--players"):
+        PLAYERS = int(value)
+        pr("Detected player amount %s"%value)
+    elif flag in ("-f", "--field"):
+        FIELD = value
+        pr("Detected field %s"%value)
+
+if PORT == None:
+    print("No port found, defaulting to {}".format(DEFAULT_PORT))
+    PORT = DEFAULT_PORT
+if PLAYERS == None:
+    print("No player amount found, defaulting to {}".format(DEFAULT_PLAYERS))
+    PLAYERS = DEFAULT_PLAYERS
+if FIELD == None:
+    print("No field found, defaulting to {}".format(DEFAULT_FIELD))
+    FIELD = DEFAULT_FIELD
+
 loop = asyncio.new_event_loop()
 server = WSServer(host=HOST, port=PORT, loop=loop)
 asyncio.set_event_loop(loop)
@@ -38,7 +75,7 @@ clients = loop.run_until_complete(waitForQ(PLAYERS))
 pr("Starting game...")
 
 
-tanksGame = tanks.TanksGame(players = 1)
+tanksGame = tanks.TanksGame(players = 1, field = field)
 
 while True:
     inputs = []
