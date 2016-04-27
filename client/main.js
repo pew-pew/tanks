@@ -212,6 +212,7 @@ Session = function(URI)
 		this.height = 5;
 		this.skin = tanksprites[no];
 		this.draw = drawsprite;
+		this.dodraw = true;
 	}
 	
 	this.Bullet = function(no, x, y)
@@ -254,7 +255,7 @@ Session = function(URI)
 			}
 			for (var tanknow in this.tanks)
 			{
-				if (this.tanks[tanknow].y == ynow)
+				if (this.tanks[tanknow].y == ynow && this.tanks[tanknow].dodraw)
 				{
 					this.tanks[tanknow].interpolx = Math.sign(this.tanks[tanknow].interpolx) * Math.max(0, Math.abs(this.tanks[tanknow].interpolx) - 1 / TANK_INTERVAL)
 					this.tanks[tanknow].interpoly = Math.sign(this.tanks[tanknow].interpoly) * Math.max(0, Math.abs(this.tanks[tanknow].interpoly) - 1 / TANK_INTERVAL)
@@ -273,7 +274,6 @@ Session = function(URI)
 					{
 						this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
 					}
-					console.log(this.tanks[tanknow].dir);
 					this.tanks[tanknow].draw(this.context, scrx, scry);
 				}
 			}
@@ -294,25 +294,34 @@ Session = function(URI)
 	
 	var onServerOpen = function(event)
 	{
-		console.log("Connected!!!  !!")
+		console.log("Connected!")
 	}
 	var onServerMessage = function(event)
 	{
 		//console.log("Message?")
 		//console.log(event)
 		var message = JSON.parse(event.data)
-		for (var i in message["tanks"])
+		for (var i = 0; i < message["tanks"].length; i++)
 		{
 			if (message["tanks"][i]["action"] == "spawn")
 			{
-				this.tanks[i] = new this.Tank(i, message["tanks"][i]["x"], message["tanks"][i]["y"]);
+				if (this.tanks.length >= i)
+				{
+					this.tanks[i] = new this.Tank(i, message["tanks"][i]["x"], message["tanks"][i]["y"]);
+				}
+				else
+				{
+					this.tanks[i].x = message["tanks"][i]["x"]
+					this.tanks[i].y = message["tanks"][i]["y"]
+				}
+				this.tanks[i].dodraw = true;
 				this.tanks[i].dirto = DIRS[message["tanks"][i]["dir"]];
 			}
 			else if (message["tanks"][i]["action"] == "die")
 			{
 				if (this.tanks[i] != false)
 				{
-					this.tanks[i] = false;
+					this.tanks[i].dodraw = false;
 					this.screenshake = 10;
 				}
 			}
@@ -386,13 +395,13 @@ Session = function(URI)
 	
 	var onServerError = function(event)
 	{
-		console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHH")
+		console.log("Error!")
 		console.log(event);
 	}
 	
 	var onServerClose = function(event)
 	{
-		console.log("Disconnect DDD::")
+		console.log("Disconnected!")
 	}
 	
 	// Server socket
@@ -436,7 +445,7 @@ Session = function(URI)
 				if (this.lastkey != this.lastsend || event.keyCode == 32)
 				{
 					this.serverconn.send(JSON.stringify({'dir': this.keysend[this.lastkey], 'fire': this.keymask[32]}));
-					console.log(JSON.stringify({'dir': this.keysend[this.lastkey], 'fire': this.keymask[32]}));
+					//console.log(JSON.stringify({'dir': this.keysend[this.lastkey], 'fire': this.keymask[32]}));
 					this.lastsend = this.lastkey;
 				}
 			}
@@ -447,5 +456,5 @@ Session = function(URI)
 	addEventListener("keyup", this.updateKeys.bind(this));
 	
 }
-ses = new Session("ws://127.0.0.1:13337");
+ses = new Session("ws://" + window.location.search.split("?")[1]);
 ses.draw();
