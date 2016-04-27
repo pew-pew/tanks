@@ -10,7 +10,7 @@ class Consts:
         self.TANK_SPEED = 10
         self.BULLET_SPEED = 20
         self.TICK_RATE = lcd(self.TANK_SPEED, self.BULLET_SPEED)
-        self.BULLET_COOLDOWN = self.time_to_tick(2.5)
+        self.BULLET_COOLDOWN = self.time_to_tick(1.5)
         self.DEATH_TIME = self.time_to_tick(1)
         self.UNTOUCH_TIME = self.time_to_tick(1)
         self.CURMAXID = 1
@@ -132,14 +132,14 @@ class Tank:
             self.death -= 1
             answer = TankAns()
             answer.die = False
+            self.y = self.consts.SPAWN_POINTS[self.id]['y']
+            self.x = self.consts.SPAWN_POINTS[self.id]['x']
             kills = []
             for tank in tanks:
                 if abs(tank.x - self.x) <= 4 and abs(tank.y - self.y) <= 4 and tank.id != self.id:
                     kills.append(tank.id)
             answer.fspawn(self.id, self.consts.SPAWN_POINTS[self.id]['dir'], self.consts.SPAWN_POINTS[self.id]['x'], self.consts.SPAWN_POINTS[self.id]['y'], kills)
-            self.x = self.consts.SPAWN_POINTS[self.id]['x']
             self.dir = self.consts.SPAWN_POINTS[self.id]['dir']
-            self.y = self.consts.SPAWN_POINTS[self.id]['y']
             self.untouch = self.consts.UNTOUCH_TIME
             self.cooldown = 0
             return answer
@@ -277,7 +277,7 @@ do_tick(0, commands, board)
 '''
 
 class TanksGame:
-    def __init__(self, players = 2, field = 'mega_battlefield.txt', coords = [{'x': 7, 'y': 22, 'dir': 'right'}, {'x': 87, 'y': 52, 'dir': 'left'}]):
+    def __init__(self, players = 2, field = 'mega_battlefield.txt', coords = [{'x': 7, 'y': 22, 'dir': 'right'}, {'x': 87, 'y': 52, 'dir': 'left'}, {'x': 7, 'y': 52, 'dir': 'right'}]):
         file = open(field, 'r')
         cpvls = file.readlines()
         self.rboard = []
@@ -364,13 +364,13 @@ class TanksGame:
         for elem in localcopy.items():
             ans = dict()
             ans['dir'] = self.bullets[elem[1].id].dir
-            if GAns['bullets'] == dict():
+            if not(elem[1].id in GAns['bullets']):
                 ans['action'] = 'move'
             if self.tick % (Consts(self.coords).TICK_RATE // Consts(self.coords).BULLET_SPEED) == 0:
                 ans['move'] = 1
             else:
                 ans['move'] = 0
-            if GAns['bullets'] == dict():
+            if not(elem[1].id in GAns['bullets']):
                 GAns['bullets'][elem[1].id] = ans
             if ans['dir'] == 'left':
                 self.bullets[elem[1].id].x -= ans['move']

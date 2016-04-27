@@ -85,10 +85,10 @@ while True:
         else:
             data = validatePlayerInput(client.lastMessage)
         inputs.append(data)
-    pr(inputs)
+    #pr(inputs)
     changes = tanksGame.do_tick(inputs)
     changesS = json.dumps(changes)
-    pr(changesS)
+    #pr(changesS)
     for client in clients:
         client.send(changesS)
     
