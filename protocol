@@ -3,11 +3,11 @@
 
 с -> к:
 {
-	'tanks': 	[{'action': 'move', 'dir': 'up', 'move': 0},
+	'tanks': 	[{'action': 'move', 'dir': 'up', 'move': 0, 'vel': 20},
 				 {'action': 'die'},
 				 {'action': 'spawn', 'dir': 'down', 'x': 123, 'y': 456},
 				],
-	'bullets': 	{99:  {'action': 'move', 'dir': 'up', 'move': 0},
+	'bullets': 	{99:  {'action': 'move', 'dir': 'up', 'move': 0, 'vel': 20},
 				 102: {'action': 'die'},
 				 5:   {'action': 'spawn', 'dir': 'down', 'x': 555, 'y': 111},
 				},
