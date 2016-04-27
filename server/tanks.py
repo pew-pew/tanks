@@ -31,6 +31,7 @@ class TankAns:
         self.move['action'] = 'move'
         self.move['dir'] = dir
         self.move['move'] = move
+        self.move['vel'] = Consts("").TANK_SPEED
     def fnew_bullet(self, dir, x, y, owner):
         self.new_bullet = dict()
         self.new_bullet['owner'] = owner
@@ -366,6 +367,7 @@ class TanksGame:
             ans['dir'] = self.bullets[elem[1].id].dir
             if not(elem[1].id in GAns['bullets']):
                 ans['action'] = 'move'
+                ans['vel'] = Consts(self.coords).BULLET_SPEED
             if self.tick % (Consts(self.coords).TICK_RATE // Consts(self.coords).BULLET_SPEED) == 0:
                 ans['move'] = 1
             else:

@@ -16,11 +16,6 @@ CELL_SIZE = 8;
 
 SKINS_NO = 4;
 
-TANK_INTERVAL = 2
-
-BULLET_INTERVAL = 1
-
-
 DIRS = {"up": 0,
 		"right": 90,
 		"down": 180,
@@ -222,7 +217,7 @@ Session = function(URI)
 		this.skin = tanksprites[no];
 		this.draw = drawsprite;
 		this.dodraw = true;
-		this.vel = 20;
+		this.vel = 0;
 	}
 	
 	this.Bullet = function(no, x, y)
@@ -236,7 +231,7 @@ Session = function(URI)
 		this.height = 1;
 		this.skin = bulletsprite;
 		this.draw = drawsprite;
-		this.vel = 40;
+		this.vel = 0;
 	}
 	
 	this.tanks = []
@@ -353,6 +348,7 @@ Session = function(URI)
 				this.tanks[i].interpolx -= XMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
 				this.tanks[i].interpoly -= YMOVES[message["tanks"][i]["dir"]] * message["tanks"][i]["move"];
 				this.tanks[i].dirto = DIRS[message["tanks"][i]["dir"]];
+				this.tanks[i].vel = message["tanks"][i]["vel"];
 			}
 		}
 		for (var i in message["bullets"])
@@ -376,6 +372,7 @@ Session = function(URI)
 				this.bullets[i].interpolx -= XMOVES[message["bullets"][i]["dir"]] * message["bullets"][i]["move"];
 				this.bullets[i].interpoly -= YMOVES[message["bullets"][i]["dir"]] * message["bullets"][i]["move"];
 				this.bullets[i].dir = DIRS[message["bullets"][i]["dir"]];
+				this.tanks[i].vel = message["tanks"][i]["vel"];
 			}
 		}
 		if (message["field"] != undefined)
