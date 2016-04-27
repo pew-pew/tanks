@@ -12,8 +12,6 @@ String.prototype.format = function() {
 
 // Constants: cell size in pixels, number of tank skins
 
-//FPS = 30
-
 CELL_SIZE = 8;
 
 SKINS_NO = 4;
@@ -115,22 +113,26 @@ Session = function(URI)
 	
 	drawsprite = function(context, x, y)
 	{
-		// Rotation!
-		context.translate(x + (this.interpolx + this.x) * CELL_SIZE, y + (this.interpoly + this.y) * CELL_SIZE);
-		context.rotate(this.dir * Math.PI / 180);
+		var sprite_canvas = document.createElement('canvas')
+		sprite_canvas.width = (this.width + this.height) * CELL_SIZE;
+		sprite_canvas.height = (this.width + this.height) * CELL_SIZE + this.skin.width / (this.width * CELL_SIZE);
+		var sprite_context = sprite_canvas.getContext('2d')
+		sprite_context.translate(sprite_canvas.width / 2, sprite_canvas.height - sprite_canvas.width / 2)
+		sprite_context.rotate(this.dir * Math.PI / 180);
 		// Fancy 3D - drawing several layers on top of each other
 		for (var i = 0; i < (this.skin.width / (this.width * CELL_SIZE)); i++)
 		{
-			context.translate(- this.width * CELL_SIZE / 2, - this.skin.height + this.height * CELL_SIZE / 2);
-			context.drawImage(this.skin, i * this.width * CELL_SIZE, 0, this.width * CELL_SIZE, this.skin.height,
+			sprite_context.translate(- this.width * CELL_SIZE / 2, - this.skin.height + this.height * CELL_SIZE / 2);
+			sprite_context.drawImage(this.skin, i * this.width * CELL_SIZE, 0, this.width * CELL_SIZE, this.skin.height,
 			0, 0, this.width * CELL_SIZE, this.skin.height);
-			context.translate(this.width * CELL_SIZE / 2, this.skin.height - this.height * CELL_SIZE / 2);
-			context.rotate(-this.dir * Math.PI / 180);
-			context.translate(0, -1);
-			context.rotate(this.dir * Math.PI / 180);
+			sprite_context.translate(this.width * CELL_SIZE / 2, this.skin.height - this.height * CELL_SIZE / 2);
+			sprite_context.rotate(-this.dir * Math.PI / 180);
+			sprite_context.translate(0, -1);
+			sprite_context.rotate(this.dir * Math.PI / 180);
 		}
-		context.rotate(-this.dir * Math.PI / 180);
-		context.translate(- x - (this.interpolx + this.x) * CELL_SIZE, - y - (this.interpoly + this.y) * CELL_SIZE + this.skin.width / (this.width * CELL_SIZE));
+		sprite_context.rotate(-this.dir * Math.PI / 180);
+		// Rotation!
+		context.drawImage(sprite_canvas, (x + (this.interpolx + this.x) * CELL_SIZE- sprite_canvas.width / 2 + .5) | 0, (y + (this.interpoly + this.y) * CELL_SIZE - sprite_canvas.height + sprite_canvas.width / 2 + .5) | 0)
 	}
 	
 	// Drawing functions: drawsimplesprite draws sprite by its skin, but without fancy stuff - might fix everything
