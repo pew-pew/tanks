@@ -12,6 +12,8 @@ String.prototype.format = function() {
 
 // Constants: cell size in pixels, number of tank skins
 
+FPS = 30
+
 CELL_SIZE = 8;
 
 SKINS_NO = 4;
@@ -19,6 +21,7 @@ SKINS_NO = 4;
 TANK_INTERVAL = 2
 
 BULLET_INTERVAL = 1
+
 
 DIRS = {"up": 0,
 		"right": 90,
@@ -213,6 +216,7 @@ Session = function(URI)
 		this.skin = tanksprites[no];
 		this.draw = drawsprite;
 		this.dodraw = true;
+		this.vel = 20;
 	}
 	
 	this.Bullet = function(no, x, y)
@@ -226,6 +230,7 @@ Session = function(URI)
 		this.height = 1;
 		this.skin = bulletsprite;
 		this.draw = drawsprite;
+		this.vel = 40;
 	}
 	
 	this.tanks = []
@@ -257,18 +262,27 @@ Session = function(URI)
 			{
 				if (this.tanks[tanknow].y == ynow && this.tanks[tanknow].dodraw)
 				{
-					this.tanks[tanknow].interpolx = Math.sign(this.tanks[tanknow].interpolx) * Math.max(0, Math.abs(this.tanks[tanknow].interpolx) - 1 / TANK_INTERVAL)
-					this.tanks[tanknow].interpoly = Math.sign(this.tanks[tanknow].interpoly) * Math.max(0, Math.abs(this.tanks[tanknow].interpoly) - 1 / TANK_INTERVAL)
+					var interpolation = this.tanks[tanknow].vel / FPS;
+					this.tanks[tanknow].interpolx = Math.sign(this.tanks[tanknow].interpolx) * Math.min(1, Math.max(0, Math.abs(this.tanks[tanknow].interpolx) - interpolation))
+					this.tanks[tanknow].interpoly = Math.sign(this.tanks[tanknow].interpoly) * Math.min(1, Math.max(0, Math.abs(this.tanks[tanknow].interpoly) - interpolation))
 					if (this.tanks[tanknow].dir == this.tanks[tanknow].dirto)
 					{
 					}
 					else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 > 180)
 					{
-						this.tanks[tanknow].dir = (this.tanks[tanknow].dir - 90 / TANK_INTERVAL + 360) % 360
+						this.tanks[tanknow].dir = (this.tanks[tanknow].dir - 90 * interpolation + 360) % 360
+						if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 < 180)
+						{
+							this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
+						}
 					}
 					else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 < 180)
 					{
-						this.tanks[tanknow].dir = (this.tanks[tanknow].dir + 90 / TANK_INTERVAL + 360) % 360
+						this.tanks[tanknow].dir = (this.tanks[tanknow].dir + 90 * interpolation + 360) % 360
+						if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 > 180)
+						{
+							this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
+						}
 					}
 					else
 					{
@@ -281,8 +295,9 @@ Session = function(URI)
 			{
 				if (this.bullets[bulletnow].y == ynow)
 				{
-					this.bullets[bulletnow].interpolx = Math.sign(this.bullets[bulletnow].interpolx) * Math.max(0, Math.abs(this.bullets[bulletnow].interpolx) - 1 / BULLET_INTERVAL)
-					this.bullets[bulletnow].interpoly = Math.sign(this.bullets[bulletnow].interpoly) * Math.max(0, Math.abs(this.bullets[bulletnow].interpoly) - 1 / BULLET_INTERVAL)
+					var interpolation = this.bullets[bulletnow].vel / FPS;
+					this.bullets[bulletnow].interpolx = Math.sign(this.bullets[bulletnow].interpolx) * Math.min(1, Math.max(0, Math.abs(this.bullets[bulletnow].interpolx) - interpolation))
+					this.bullets[bulletnow].interpoly = Math.sign(this.bullets[bulletnow].interpoly) * Math.min(1, Math.max(0, Math.abs(this.bullets[bulletnow].interpoly) - interpolation))
 					this.bullets[bulletnow].draw(this.context, scrx, scry);
 				}
 			}
@@ -390,7 +405,6 @@ Session = function(URI)
 				this.tilemap[message["blocks"][i].x + 1][message["blocks"][i].y].update = true
 			}
 		}
-		this.draw();
 	}
 	
 	var onServerError = function(event)
@@ -451,10 +465,15 @@ Session = function(URI)
 			}
 		}
 	}
-	
+	setInterval(this.draw.bind(this), 1000 / FPS)
 	addEventListener("keydown", this.updateKeys.bind(this));
 	addEventListener("keyup", this.updateKeys.bind(this));
 	
 }
-ses = new Session("ws://" + window.location.search.split("?")[1]);
+var addr = "127.0.0.1:13337"
+if (window.location.search.split("?").length > 1)
+{
+	addr = window.location.search.split("?")[1]
+}
+ses = new Session("ws://{0}".format(addr));
 ses.draw();

@@ -1,3 +1,3 @@
-git web--browse client/index.html?127.0.0.1:13337
+git web--browse client/index.html
 cd server
 py -3.4 tanksServer.py -n 1
