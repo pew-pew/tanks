@@ -277,7 +277,7 @@ do_tick(0, commands, board)
 '''
 
 class TanksGame:
-    def __init__(self, players = 2, field = 'mega_battlefield.txt', coords = [{'x': 7, 'y': 22, 'dir': 'right'}, {'x': 87, 'y': 52, 'dir': 'left'}]):
+    def __init__(self, players = 2, field = 'mega_battlefield.txt', coords = [{'x': 7, 'y': 22, 'dir': 'right'}, {'x': 87, 'y': 52, 'dir': 'left'}, {'x': 7, 'y': 52, 'dir': 'right'}]):
         file = open(field, 'r')
         cpvls = file.readlines()
         self.rboard = []
