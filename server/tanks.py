@@ -132,14 +132,14 @@ class Tank:
             self.death -= 1
             answer = TankAns()
             answer.die = False
+            self.y = self.consts.SPAWN_POINTS[self.id]['y']
+            self.x = self.consts.SPAWN_POINTS[self.id]['x']
             kills = []
             for tank in tanks:
                 if abs(tank.x - self.x) <= 4 and abs(tank.y - self.y) <= 4 and tank.id != self.id:
                     kills.append(tank.id)
             answer.fspawn(self.id, self.consts.SPAWN_POINTS[self.id]['dir'], self.consts.SPAWN_POINTS[self.id]['x'], self.consts.SPAWN_POINTS[self.id]['y'], kills)
-            self.x = self.consts.SPAWN_POINTS[self.id]['x']
             self.dir = self.consts.SPAWN_POINTS[self.id]['dir']
-            self.y = self.consts.SPAWN_POINTS[self.id]['y']
             self.untouch = self.consts.UNTOUCH_TIME
             self.cooldown = 0
             return answer
