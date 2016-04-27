@@ -12,7 +12,7 @@ String.prototype.format = function() {
 
 // Constants: cell size in pixels, number of tank skins
 
-FPS = 30
+//FPS = 30
 
 CELL_SIZE = 8;
 
@@ -106,6 +106,10 @@ Session = function(URI)
 	this.canvas = document.getElementById("gameCanvas");
 	this.context = this.canvas.getContext('2d');
 	this.URI = URI;
+	
+	// Current time - useful for delta timing!
+	
+	this.curTime = new Date().getTime()
 	
 	// Drawing functions: drawsprite draws sprite by its skin
 	
@@ -242,6 +246,10 @@ Session = function(URI)
 	
 	this.draw = function()
 	{
+		requestAnimationFrame(this.draw.bind(this));
+		var newTime = new Date().getTime()
+		var deltaTime = newTime - this.curTime;
+		this.curTime = newTime;
 		var scrx = 0;
 		var scry = 0;
 		if (this.screenshake > 0)
@@ -262,27 +270,23 @@ Session = function(URI)
 			{
 				if (this.tanks[tanknow].y == ynow && this.tanks[tanknow].dodraw)
 				{
-					var interpolation = this.tanks[tanknow].vel / FPS;
+					var interpolation = this.tanks[tanknow].vel * deltaTime / 1000;
 					this.tanks[tanknow].interpolx = Math.sign(this.tanks[tanknow].interpolx) * Math.min(1, Math.max(0, Math.abs(this.tanks[tanknow].interpolx) - interpolation))
 					this.tanks[tanknow].interpoly = Math.sign(this.tanks[tanknow].interpoly) * Math.min(1, Math.max(0, Math.abs(this.tanks[tanknow].interpoly) - interpolation))
 					if (this.tanks[tanknow].dir == this.tanks[tanknow].dirto)
 					{
 					}
+					else if (interpolation * 90 >= Math.abs(this.tanks[tanknow].dirto - this.tanks[tanknow].dir))
+					{
+						this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
+					}
 					else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 > 180)
 					{
 						this.tanks[tanknow].dir = (this.tanks[tanknow].dir - 90 * interpolation + 360) % 360
-						if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 < 180)
-						{
-							this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
-						}
 					}
 					else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 < 180)
 					{
 						this.tanks[tanknow].dir = (this.tanks[tanknow].dir + 90 * interpolation + 360) % 360
-						if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 > 180)
-						{
-							this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
-						}
 					}
 					else
 					{
@@ -295,7 +299,7 @@ Session = function(URI)
 			{
 				if (this.bullets[bulletnow].y == ynow)
 				{
-					var interpolation = this.bullets[bulletnow].vel / FPS;
+					var interpolation = this.bullets[bulletnow].vel * deltaTime / 1000;
 					this.bullets[bulletnow].interpolx = Math.sign(this.bullets[bulletnow].interpolx) * Math.min(1, Math.max(0, Math.abs(this.bullets[bulletnow].interpolx) - interpolation))
 					this.bullets[bulletnow].interpoly = Math.sign(this.bullets[bulletnow].interpoly) * Math.min(1, Math.max(0, Math.abs(this.bullets[bulletnow].interpoly) - interpolation))
 					this.bullets[bulletnow].draw(this.context, scrx, scry);
@@ -465,7 +469,7 @@ Session = function(URI)
 			}
 		}
 	}
-	setInterval(this.draw.bind(this), 1000 / FPS)
+	requestAnimationFrame(this.draw.bind(this));
 	addEventListener("keydown", this.updateKeys.bind(this));
 	addEventListener("keyup", this.updateKeys.bind(this));
 	
