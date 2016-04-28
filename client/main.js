@@ -94,10 +94,11 @@ for (var tile in TILE_SPRITE_PATH)
 
 Session = function(URI)
 {
-	// Canvas + its context + server's URI
+	// Canvas + its context (+ color - it's expensive to change) + server's URI
 	
 	this.canvas = document.getElementById("gameCanvas");
 	this.context = this.canvas.getContext('2d');
+	this.context.fillStyle = "green";
 	this.URI = URI;
 	
 	// Current time - useful for delta timing!
@@ -137,9 +138,7 @@ Session = function(URI)
 		context.drawImage(this.skin, x + this.x * CELL_SIZE - this.width * CELL_SIZE / 2, y + this.y * CELL_SIZE - this.skin.height + this.height * CELL_SIZE / 2);
 	}
 	
-	this.fieldwidth = 75;
-	this.fieldheight = 75;
-	
+	this.toUpdate = []
 	
 	this.tilemap = [];
 	
@@ -194,16 +193,6 @@ Session = function(URI)
 		this.draw = gendrawtile(me);
 	}
 	
-	for (var i = 0; i < this.fieldheight; i++)
-	{
-		this.tilemap[i] = [];
-		for (var j = 0; j < this.fieldwidth; j++)
-		{
-			//var thistype = ((i >= 15 && i <= 20 && j >= 15 && j <= 20) ? 1 : ((j >= 8 && j <= 12) || Math.random() > 0.3) ? 0 : 2)
-			this.tilemap[i][j] = new this.Tile(0, i, j, this);
-		}
-	}
-	
 	this.Tank = function(no, x, y)
 	{
 		this.interpolx = 0;
@@ -246,61 +235,145 @@ Session = function(URI)
 		requestAnimationFrame(this.draw.bind(this));
 		var newTime = new Date().getTime()
 		var deltaTime = newTime - this.curTime;
+		var totalUpdate = false;
 		this.curTime = newTime;
 		var scrx = 0;
 		var scry = 0;
 		if (this.screenshake > 0)
 		{
-			scrx = (Math.random() - 0.5) * this.screenshake
-			scry = (Math.random() - 0.5) * this.screenshake
+			scrx = Math.round((Math.random() - 0.5) * this.screenshake)
+			scry = Math.round((Math.random() - 0.5) * this.screenshake)
+		}
+		if (this.screenshake >= 0)
+		{
+			totalUpdate = true;
 			this.screenshake--;
 		}
-		this.context.fillStyle = "green";
-		this.context.fillRect(0, 0, 1000, 1000)
-		for (var ynow in this.tilemap[0])
+		if (totalUpdate)
 		{
-			for (var xnow in this.tilemap)
+			this.context.fillRect(0, 0, 1000, 1000)
+			for (var ynow in this.tilemap[0])
 			{
-				this.tilemap[xnow][ynow].draw(this.context, scrx, scry);
+				for (var xnow in this.tilemap)
+				{
+					this.tilemap[xnow][ynow].draw(this.context, scrx, scry);
+				}
+				for (var tanknow in this.tanks)
+				{
+					if (this.tanks[tanknow].y == ynow && this.tanks[tanknow].dodraw)
+					{
+						var interpolation = this.tanks[tanknow].vel * deltaTime / 1000;
+						this.tanks[tanknow].interpolx = Math.sign(this.tanks[tanknow].interpolx) * Math.min(1, Math.max(0, Math.abs(this.tanks[tanknow].interpolx) - interpolation))
+						this.tanks[tanknow].interpoly = Math.sign(this.tanks[tanknow].interpoly) * Math.min(1, Math.max(0, Math.abs(this.tanks[tanknow].interpoly) - interpolation))
+						if (this.tanks[tanknow].dir == this.tanks[tanknow].dirto)
+						{
+						}
+						else if (interpolation * 90 >= Math.abs(this.tanks[tanknow].dirto - this.tanks[tanknow].dir))
+						{
+							this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
+						}
+						else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 > 180)
+						{
+							this.tanks[tanknow].dir = (this.tanks[tanknow].dir - 90 * interpolation + 360) % 360
+						}
+						else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 < 180)
+						{
+							this.tanks[tanknow].dir = (this.tanks[tanknow].dir + 90 * interpolation + 360) % 360
+						}
+						else
+						{
+							this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
+						}
+						this.tanks[tanknow].draw(this.context, scrx, scry);
+					}
+				}
+				for (var bulletnow in this.bullets)
+				{
+					if (this.bullets[bulletnow].y == ynow)
+					{
+						var interpolation = this.bullets[bulletnow].vel * deltaTime / 1000;
+						this.bullets[bulletnow].interpolx = Math.sign(this.bullets[bulletnow].interpolx) * Math.min(1, Math.max(0, Math.abs(this.bullets[bulletnow].interpolx) - interpolation))
+						this.bullets[bulletnow].interpoly = Math.sign(this.bullets[bulletnow].interpoly) * Math.min(1, Math.max(0, Math.abs(this.bullets[bulletnow].interpoly) - interpolation))
+						this.bullets[bulletnow].draw(this.context, scrx, scry);
+					}
+				}
 			}
+		}
+		else
+		{
 			for (var tanknow in this.tanks)
 			{
-				if (this.tanks[tanknow].y == ynow && this.tanks[tanknow].dodraw)
+				for (var i = -Math.ceil(this.tanks[tanknow].width) - 1; i < Math.ceil(this.tanks[tanknow].width) + 2; i++)
 				{
-					var interpolation = this.tanks[tanknow].vel * deltaTime / 1000;
-					this.tanks[tanknow].interpolx = Math.sign(this.tanks[tanknow].interpolx) * Math.min(1, Math.max(0, Math.abs(this.tanks[tanknow].interpolx) - interpolation))
-					this.tanks[tanknow].interpoly = Math.sign(this.tanks[tanknow].interpoly) * Math.min(1, Math.max(0, Math.abs(this.tanks[tanknow].interpoly) - interpolation))
-					if (this.tanks[tanknow].dir == this.tanks[tanknow].dirto)
-					{
-					}
-					else if (interpolation * 90 >= Math.abs(this.tanks[tanknow].dirto - this.tanks[tanknow].dir))
-					{
-						this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
-					}
-					else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 > 180)
-					{
-						this.tanks[tanknow].dir = (this.tanks[tanknow].dir - 90 * interpolation + 360) % 360
-					}
-					else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 < 180)
-					{
-						this.tanks[tanknow].dir = (this.tanks[tanknow].dir + 90 * interpolation + 360) % 360
-					}
-					else
-					{
-						this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
-					}
-					this.tanks[tanknow].draw(this.context, scrx, scry);
+					this.toUpdate[Math.min(Math.max(0, this.tanks[tanknow].x + i), this.toUpdate.length - 1)] = true;
 				}
 			}
 			for (var bulletnow in this.bullets)
 			{
-				if (this.bullets[bulletnow].y == ynow)
+				for (var i = -Math.ceil(this.bullets[bulletnow].width) - 1; i < Math.ceil(this.bullets[bulletnow].width) + 2; i++)
 				{
-					var interpolation = this.bullets[bulletnow].vel * deltaTime / 1000;
-					this.bullets[bulletnow].interpolx = Math.sign(this.bullets[bulletnow].interpolx) * Math.min(1, Math.max(0, Math.abs(this.bullets[bulletnow].interpolx) - interpolation))
-					this.bullets[bulletnow].interpoly = Math.sign(this.bullets[bulletnow].interpoly) * Math.min(1, Math.max(0, Math.abs(this.bullets[bulletnow].interpoly) - interpolation))
-					this.bullets[bulletnow].draw(this.context, scrx, scry);
+					this.toUpdate[Math.min(Math.max(0, this.bullets[bulletnow].x + i), this.toUpdate.length - 1)] = true;
 				}
+			}
+			for (var xnow = 0; xnow < this.tilemap.length; xnow++)
+			{
+				if (this.toUpdate[xnow])
+				{
+					this.context.fillRect(CELL_SIZE * (xnow - 0.5), 0, CELL_SIZE, CELL_SIZE * this.tilemap[xnow].length)
+				}
+			}
+			for (var ynow in this.tilemap[0])
+			{
+				for (var xnow = 0; xnow < this.tilemap.length; xnow++)
+				{
+					if (this.toUpdate[xnow])
+					{
+						this.tilemap[xnow][ynow].draw(this.context, scrx, scry);
+					}
+				}
+				for (var tanknow in this.tanks)
+				{
+					if (this.tanks[tanknow].y == ynow && this.tanks[tanknow].dodraw)
+					{
+						var interpolation = this.tanks[tanknow].vel * deltaTime / 1000;
+						this.tanks[tanknow].interpolx = Math.sign(this.tanks[tanknow].interpolx) * Math.min(1, Math.max(0, Math.abs(this.tanks[tanknow].interpolx) - interpolation))
+						this.tanks[tanknow].interpoly = Math.sign(this.tanks[tanknow].interpoly) * Math.min(1, Math.max(0, Math.abs(this.tanks[tanknow].interpoly) - interpolation))
+						if (this.tanks[tanknow].dir == this.tanks[tanknow].dirto)
+						{
+						}
+						else if (interpolation * 90 >= Math.abs(this.tanks[tanknow].dirto - this.tanks[tanknow].dir))
+						{
+							this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
+						}
+						else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 > 180)
+						{
+							this.tanks[tanknow].dir = (this.tanks[tanknow].dir - 90 * interpolation + 360) % 360
+						}
+						else if ((this.tanks[tanknow].dirto - this.tanks[tanknow].dir + 360) % 360 < 180)
+						{
+							this.tanks[tanknow].dir = (this.tanks[tanknow].dir + 90 * interpolation + 360) % 360
+						}
+						else
+						{
+							this.tanks[tanknow].dir = this.tanks[tanknow].dirto;
+						}
+						this.tanks[tanknow].draw(this.context, scrx, scry);
+					}
+				}
+				for (var bulletnow in this.bullets)
+				{
+					if (this.bullets[bulletnow].y == ynow)
+					{
+						var interpolation = this.bullets[bulletnow].vel * deltaTime / 1000;
+						this.bullets[bulletnow].interpolx = Math.sign(this.bullets[bulletnow].interpolx) * Math.min(1, Math.max(0, Math.abs(this.bullets[bulletnow].interpolx) - interpolation))
+						this.bullets[bulletnow].interpoly = Math.sign(this.bullets[bulletnow].interpoly) * Math.min(1, Math.max(0, Math.abs(this.bullets[bulletnow].interpoly) - interpolation))
+						this.bullets[bulletnow].draw(this.context, scrx, scry);
+					}
+				}
+			}
+			for (var xnow = 0; xnow < this.tilemap.length; xnow++)
+			{
+				this.toUpdate[xnow] = false;
 			}
 		}
 	}
@@ -372,15 +445,17 @@ Session = function(URI)
 				this.bullets[i].interpolx -= XMOVES[message["bullets"][i]["dir"]] * message["bullets"][i]["move"];
 				this.bullets[i].interpoly -= YMOVES[message["bullets"][i]["dir"]] * message["bullets"][i]["move"];
 				this.bullets[i].dir = DIRS[message["bullets"][i]["dir"]];
-				this.tanks[i].vel = message["tanks"][i]["vel"];
+				this.bullets[i].vel = message["bullets"][i]["vel"];
 			}
 		}
 		if (message["field"] != undefined)
 		{
 			this.tilemap = []
+			this.toUpdate = []
 			for (var i = 0; i < message["field"].length; i++)
 			{
 				this.tilemap[i] = []
+				this.toUpdate[i] = true
 				for (var j = 0; j < message["field"][i].length; j++)
 				{
 					this.tilemap[i][j] = new this.Tile(parseInt(message["field"][i][j]), i, j, this);
@@ -390,6 +465,10 @@ Session = function(URI)
 		for (var i = 0; i < message["blocks"].length; i++)
 		{
 			this.screenshake = 5;
+			for (var j = -1; j < 2; j++)
+			{
+				this.toUpdate[Math.min(Math.max(0, message["blocks"][i].x + j), this.toUpdate.length - 1)] = true;
+			}
 			this.tilemap[message["blocks"][i].x][message["blocks"][i].y].type = message["blocks"][i].id
 			if (message["blocks"][i].y > 0)
 			{
