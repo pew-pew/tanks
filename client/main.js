@@ -33,8 +33,12 @@ YMOVES = {"up": -1,
 
 // File paths
 
-TANK_SPRITE_PATH = "./images/tanks/tank{0}.png";
-TILE_SPRITE_PATH = ["./images/air.png", "./images/solid/solid{0}.png", "./images/destro/destro{0}.png"]
+TANK_SPRITE_PATH = "./resources/tanks/tank{0}.png";
+BULLET_SPRITE_PATH = "./resources/bullet.png";
+TILE_SPRITE_PATH = ["./resources/air.png", "./resources/solid/solid{0}.png", "./resources/destro/destro{0}.png"]
+
+SHOT_AUDIO_PATH = "./resources/tankShot.wav"
+EXPLODE_AUDIO_PATH = "./resources/tankExplode.wav"
 
 // Load tank graphics
 
@@ -52,7 +56,6 @@ for (var i = 0; i < SKINS_NO; i++)
 	tanksprites[i].src = TANK_SPRITE_PATH.format(i);
 }
 
-BULLET_SPRITE_PATH = "./images/bullet.png";
 
 bulletspritesready = 1;
 bulletspritesnow = 0;
@@ -206,7 +209,9 @@ Session = function(URI)
 		this.skin = tanksprites[no];
 		this.draw = drawsprite;
 		this.dodraw = true;
+		this.diddraw = true;
 		this.vel = 0;
+		this.explodeSound = new Audio(EXPLODE_AUDIO_PATH);
 	}
 	
 	this.Bullet = function(no, x, y)
@@ -220,6 +225,8 @@ Session = function(URI)
 		this.height = 1;
 		this.skin = bulletsprite;
 		this.draw = drawsprite;
+		this.shotSound = new Audio(SHOT_AUDIO_PATH);
+		this.shotSound.play();
 		this.vel = 0;
 	}
 	
@@ -376,6 +383,13 @@ Session = function(URI)
 				this.toUpdate[xnow] = false;
 			}
 		}
+		for (var tanknow in this.tanks)
+		{
+			if (!this.tanks[tanknow].dodraw && this.tanks[tanknow].diddraw)
+			{
+				this.tanks[tanknow].explodeSound.play();
+			}
+		}
 	}
 	
 	
@@ -403,6 +417,7 @@ Session = function(URI)
 					this.tanks[i].x = message["tanks"][i]["x"]
 					this.tanks[i].y = message["tanks"][i]["y"]
 				}
+				this.tanks[i].diddraw = this.tanks[i].dodraw;
 				this.tanks[i].dodraw = true;
 				this.tanks[i].dirto = DIRS[message["tanks"][i]["dir"]];
 			}
@@ -410,6 +425,7 @@ Session = function(URI)
 			{
 				if (this.tanks[i] != false)
 				{
+					this.tanks[i].diddraw = this.tanks[i].dodraw;
 					this.tanks[i].dodraw = false;
 					this.screenshake = 10;
 				}
