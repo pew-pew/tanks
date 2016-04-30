@@ -7,10 +7,10 @@ def tank_lose(i):
     ya_hochu_spat = True
 class Consts:
     def __init__(self, coords):
-        self.TANK_SPEED = 10
-        self.BULLET_SPEED = 20
+        self.TANK_SPEED = 15
+        self.BULLET_SPEED = 45
         self.TICK_RATE = lcd(self.TANK_SPEED, self.BULLET_SPEED)
-        self.BULLET_COOLDOWN = self.time_to_tick(1.5)
+        self.BULLET_COOLDOWN = self.time_to_tick(1)
         self.DEATH_TIME = self.time_to_tick(1)
         self.UNTOUCH_TIME = self.time_to_tick(1)
         self.CURMAXID = 1

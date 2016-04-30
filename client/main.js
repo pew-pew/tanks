@@ -241,8 +241,8 @@ Session = function(URI)
 		var scry = 0;
 		if (this.screenshake > 0)
 		{
-			scrx = Math.round((Math.random() - 0.5) * this.screenshake)
-			scry = Math.round((Math.random() - 0.5) * this.screenshake)
+			scrx = Math.round((Math.random() - 0.5) * this.screenshake * 2)
+			scry = Math.round((Math.random() - 0.5) * this.screenshake * 2)
 		}
 		if (this.screenshake >= 0)
 		{
@@ -411,7 +411,7 @@ Session = function(URI)
 				if (this.tanks[i] != false)
 				{
 					this.tanks[i].dodraw = false;
-					this.screenshake = 10;
+					this.screenshake = 7;
 				}
 			}
 			else if (message["tanks"][i]["action"] == "move")
