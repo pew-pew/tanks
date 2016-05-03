@@ -62,8 +62,12 @@ var Entity = function(x, y, spriteURI)
 // ^ Nice implementation >:[
 Level = function()
 {
-	this.field = []
+	this.palette = []
+	this.field = [[1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 0, 0, 0], [1, 1, 1, 1, 1]]
 	this.entities = []
+
+	// Makes entities act
+
 	this.act = function(id, action)
 	{
 		if (!(id in this.entities))
@@ -77,11 +81,69 @@ Level = function()
 			console.log(this.entities)
 		}
 	}
-	this.draw = function(x, y, context)
+
+	// Drawing functions: draws a lone tile
+
+	this.drawTile = function(x, y, context)
 	{
+		// First, we find the appropriate cutout by looking at our neighbours.
+
+		// The neighbour order is:  Up     Down   Left   Right
+		
+		// The cutout goes like
+
+		//#<->
+		//^╔═╗
+		//|║╳║
+		//V╚═╝
+
+		var mytype = this.field[x][y];
+		var neighbours = [];
+
+		neighbours[0] = (y != 0 && this.field[x][y - 1] == mytype);
+
+		neighbours[1] = (y != this.field[x].length - 1  && this.field[x][y + 1] == mytype);
+
+		neighbours[2] = (x != 0 && this.field[x - 1][y] == mytype);
+
+		neighbours[3] = (x != this.field.length - 1 && this.field[x + 1][y] == mytype);
+
+		var cuty = [0, 1, 3, 2][2 * neighbours[0] + neighbours[1]];
+
+		var cutx = [0, 1, 3, 2][2 * neighbours[2] + neighbours[3]];
+
+		context.drawImage(this.palette[mytype], this.palette[mytype].width * cutx / 4, this.palette[mytype].height * cuty / 4, this.palette[mytype].width / 4, this.palette[mytype].height / 4, (x + 1) * CELL_SIZE - this.palette[mytype].width / 4, (y + 1) * CELL_SIZE - this.palette[mytype].height / 4, this.palette[mytype].width / 4, this.palette[mytype].height / 4);
+	}
+
+	// Drawing functions: draws the level
+
+	this.draw = function(context)
+	{
+		for (var y = 0; y < this.field[0].length; y++)
+		{
+			for (var x = 0; x < this.field.length; x++)
+			{
+				this.drawTile(x, y, context);
+			}
+		}
 		for (var entity in this.entities)
 		{
 			this.entities[entity].draw(x, y, context);
+		}
+	}
+
+	this.setField = function()
+	{
+		//Please unstub me :c
+	}
+
+	this.setPalette = function(URIs)
+	{
+		this.palettes = []
+		for (var i = 0; i < URIs.length; i++)
+		{
+			this.palette[i] = new Image();
+			this.palette[i].src = URIs[i];
 		}
 	}
 
