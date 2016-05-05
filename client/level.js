@@ -132,9 +132,9 @@ Level = function()
 		}
 	}
 
-	this.setField = function()
+	this.setField = function(map)
 	{
-		//Please unstub me :c
+		this.field = map;
 	}
 
 	this.setPalette = function(URIs)
