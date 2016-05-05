@@ -1,4 +1,8 @@
-const CELL_SIZE = 8
+const CELL_SIZE = 8;
+
+// Would probably be unwise to generate a new one whenever I need
+
+var currentTime = new Date().getTime();
 
 // Apparently, ECMAScript 6, which is literally the JS standard, isn't implemented in most browsers.
 // So mad right now.
@@ -26,14 +30,41 @@ var Entity = function(x, y, spriteURI)
 	
 	this.update = function()
 	{
-		// Stub :c
+		if (this.oldDir != this.newDir)
+		{
+			this.updateSprite = true;
+		}
+
+		var delta = new Date().getTime() - currentTime;
+		if (delta >= this.vel)
+		{
+			this.oldX = this.newX;
+			this.oldY = this.newY;
+			this.vel = 0
+		}
+		else
+		{
+			this.oldX = (delta * this.newX + (this.vel - delta) * this.oldX) / this.vel;
+			this.oldY = (delta * this.newY + (this.vel - delta) * this.oldY) / this.vel;
+			this.vel -= delta;
+		}
+
+		if (delta >= this.dirVel)
+		{
+			this.oldDir = Math.abs(this.newDir);
+		}
+		else
+		{
+			this.oldDir = (this.oldDir + (Math.abs(this.newDir) - this.oldDir + 1080 * Math.sign(this.newDir)) % 360 * delta / this.dirVel) % 360;
+			this.dirVel -= delta;
+		}
 	}
 	// Draws the sprite on an internal canvas
 
 	this.drawSprite = function()
 	{
 		this.spriteCanvas.width = this.spriteCanvas.width;
-		this.spriteContext.translate(this.spriteCanvas.width / 2, this.spriteCanvas.height - this.spriteCanvas.width / 2)
+		this.spriteContext.translate(this.spriteCanvas.width / 2, this.spriteCanvas.height - this.spriteCanvas.width / 2);
 		for (var layer = 0; layer < this.sprite.width / this.sprite.height; layer++)
 		{
 			this.spriteContext.rotate(this.oldDir * Math.PI / 180);
@@ -46,14 +77,14 @@ var Entity = function(x, y, spriteURI)
 
 	// Draws the sprite on the given context
 
-	this.draw = function(x, y, context)
+	this.draw = function(context)
 	{
 		this.update();
 		if (this.updateSprite)
 		{
 			this.drawSprite();
 		}
-		context.drawImage(this.spriteCanvas, x, y);
+		context.drawImage(this.spriteCanvas, CELL_SIZE * this.oldX, CELL_SIZE * this.oldY);
 	}
 }
 
@@ -62,9 +93,11 @@ var Entity = function(x, y, spriteURI)
 // ^ Nice implementation >:[
 Level = function()
 {
-	this.palette = []
-	this.field = [[1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 0, 0, 0], [1, 1, 1, 1, 1]]
-	this.entities = []
+	this.palette = [];
+	this.field = [[1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 0, 0, 0], [1, 1, 1, 1, 1]];
+	this.entities = [];
+	this.context = undefined;
+	this.doDrawing = true;
 
 	// Makes entities act
 
@@ -79,6 +112,34 @@ Level = function()
 				this.entities[id].oldDir = action["dir"];
 			}
 			console.log(this.entities)
+		}
+		if ('x' in action)
+		{
+			this.entities[id].newX = action["x"];
+		}
+		if ('y' in action)
+		{
+			this.entities[id].newY = action["y"];
+		}
+		if ('dir' in action)
+		{
+			this.entities[id].newDir = action["dir"];
+		}
+		if ('vel' in action)
+		{
+			this.entities[id].vel = action["vel"];
+		}
+		if ('dirvel' in action)
+		{
+			this.entities[id].dirVel = action["dirvel"];
+		}
+		if ('draw' in action)
+		{
+			this.entities[id].doDrawing = action["draw"];
+		}
+		if ('sprite' in action)
+		{
+			this.entities[id].sprite.src = action["sprite"];
 		}
 	}
 
@@ -125,11 +186,24 @@ Level = function()
 			{
 				this.drawTile(x, y, context);
 			}
+			for (var entity in this.entities)
+			{
+				if (Math.round(this.entities[entity].oldY) == y)
+				{
+					this.entities[entity].draw(context);
+				}
+			}
 		}
-		for (var entity in this.entities)
+		currentTime = new Date().getTime();
+	}
+
+	this.drawLoop = function()
+	{
+		if (this.doDrawing)
 		{
-			this.entities[entity].draw(x, y, context);
+			this.draw(this.context);
 		}
+		requestAnimationFrame(this.drawLoop.bind(this))
 	}
 
 	this.setField = function(map)
