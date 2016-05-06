@@ -2,6 +2,26 @@
 
 // ^ Wow rude.
 
+var Session = function(URI)
+{
+	this.socket = new WebSocket(URI);
+	socket.onOpen = function(event)
+	{
+		alert("Connected!");
+	}
+	socket.onMessage = function(event)
+	{
+		alert("Message!");
+	}
+	socket.onError = function(event)
+	{
+		alert("Error!");
+	}
+	socket.onClose = function(event)
+	{
+		alert("Disconnected!");
+	}
+}
 var ctx = document.getElementById("gameCanvas").getContext("2d")
 
 a = new Level();

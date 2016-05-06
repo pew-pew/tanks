@@ -1,11 +1,28 @@
 const CELL_SIZE = 8;
 
-// Would probably be unwise to generate a new one whenever I need
+// Gotta have that - prevents lots of reloading not taken away by caching...
+// ...and also gives the game an option to pre-load images.
+var images = []
+
+var getImage = function(URI)
+{
+	if (URI in images)
+	{
+		return images[URI];
+	}
+	else
+	{
+		images[URI] = new Image();
+		images[URI].src = URI;
+		imagesReady[URI] = false;
+		images[URI].onload = function()
+		{
+			imagesReady[this.src] = true;
+		}
+	}
+}
 
 var currentTime = new Date().getTime();
-
-// Apparently, ECMAScript 6, which is literally the JS standard, isn't implemented in most browsers.
-// So mad right now.
 
 var Entity = function(x, y, spriteURI)
 {
@@ -17,9 +34,9 @@ var Entity = function(x, y, spriteURI)
 	this.oldDir = 0;
 	this.newDir = 0;
 	this.dirVel = 0;
-	this.sprite = new Image();
-	this.sprite.src = spriteURI;
+	this.sprite = getImage(spriteURI);
 	this.updateSprite = true;
+	this.doDrawing = true;
 	this.spriteCanvas = document.createElement("canvas");
 	this.spriteContext = this.spriteCanvas.getContext("2d")
 
@@ -80,21 +97,28 @@ var Entity = function(x, y, spriteURI)
 	this.draw = function(context)
 	{
 		this.update();
-		if (this.updateSprite)
+		if (this.doDrawing)
 		{
-			this.drawSprite();
+			if (this.updateSprite)
+			{
+				this.drawSprite();
+			}
+			context.drawImage(this.spriteCanvas, CELL_SIZE * this.oldX, CELL_SIZE * this.oldY);
 		}
-		context.drawImage(this.spriteCanvas, CELL_SIZE * this.oldX, CELL_SIZE * this.oldY);
 	}
 }
+
+// Apparently, ECMAScript 6, which is literally the JS standard, isn't implemented in most browsers.
+// So mad right now.
 
 // export default function Level()
 
 // ^ Nice implementation >:[
+
 Level = function()
 {
 	this.palette = [];
-	this.field = [[1, 1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 0, 0, 0], [1, 1, 1, 1, 1]];
+	this.field = []; 
 	this.entities = [];
 	this.context = undefined;
 	this.doDrawing = true;
@@ -216,8 +240,7 @@ Level = function()
 		this.palettes = []
 		for (var i = 0; i < URIs.length; i++)
 		{
-			this.palette[i] = new Image();
-			this.palette[i].src = URIs[i];
+			this.palette[i] = getImage(URIs[i]);
 		}
 	}
 
