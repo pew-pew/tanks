@@ -2,31 +2,78 @@
 
 // ^ Wow rude.
 
+const DEFAULT_ADDR = "127.0.0.1:13337";
+
 var Session = function(URI)
 {
+	this.level = new Level();
 	this.socket = new WebSocket(URI);
-	socket.onOpen = function(event)
+	this.socket.onOpen = function(event)
 	{
-		alert("Connected!");
+		console.log("Connected!");
 	}
-	socket.onMessage = function(event)
+	this.socket.onMessage = function(event)
 	{
-		alert("Message!");
+		console.log("Message!");
+		var message = JSON.parse(event.data);
+		if ("palette" in message)
+		{
+			this.level.setPalette(message["palette"]);
+		}
+		if ("field" in message)
+		{
+			this.level.setField(message["field"]);
+		}
+		if ("entities" in message)
+		{
+			for (var i in message["entities"])
+			{
+				this.level.act(i, message["entities"][i]);
+			}
+		}
 	}
-	socket.onError = function(event)
+	this.socket.onError = function(event)
 	{
 		alert("Error!");
 	}
-	socket.onClose = function(event)
+	this.socket.onClose = function(event)
 	{
 		alert("Disconnected!");
 	}
-}
-var ctx = document.getElementById("gameCanvas").getContext("2d")
 
-a = new Level();
-a.act("test", {"x": 20, "y": 20, "dir": 90, "sprite": "resources/tanks/tank1.png"});
-a.setPalette(["resources/tilesets/air.png", "resources/tilesets/metal.png"])
-a.context = ctx;
-a.drawLoop();
-a.act("test", {"x": 22, "y": 20, "dir": 0, "vel": 1000, "dirvel": 1000, "sprite": "resources/tanks/tank1.png"});
+	this.keys = {16: false, 32: false, 37: false, 38: false, 39: false, 40: false};
+	this.order = [38, 40, 37, 39, 32, 16]
+	this.lastno = 0;
+	this.handleKeys = function(event)
+	{
+		if (event.keyCode in this.keys)
+		{
+			this.keys[event.keyCode] = (event.type == "keydown");
+		}
+		var byteno = 0;
+		for (var i in this.order)
+		{
+			byteno += this.keys[this.order[i]];
+			byteno *= 2;
+		}
+		byteno *= 2;
+		if (byteno != this.lastno)
+		{
+			this.socket.send(String.fromCharCode(byteno));
+			this.lastno = byteno;
+		}
+	}
+
+	addEventListener("keydown", this.handleKeys.bind(this));
+	addEventListener("keyup", this.handleKeys.bind(this));
+
+	this.level.context = document.getElementById("gameCanvas").getContext("2d");
+	this.level.drawLoop();
+}
+
+var addr = DEFAULT_ADDR;
+if (window.location.search.split("?").length > 1)
+{
+	addr = window.location.search.split("?")[1];
+}
+a = new Session("ws://" + addr);

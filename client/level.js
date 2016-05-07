@@ -204,21 +204,24 @@ Level = function()
 
 	this.draw = function(context)
 	{
-		for (var y = 0; y < this.field[0].length; y++)
+		if (this.field.length > 0)
 		{
-			for (var x = 0; x < this.field.length; x++)
+			for (var y = 0; y < this.field[0].length; y++)
 			{
-				this.drawTile(x, y, context);
-			}
-			for (var entity in this.entities)
-			{
-				if (Math.round(this.entities[entity].oldY) == y)
+				for (var x = 0; x < this.field.length; x++)
 				{
-					this.entities[entity].draw(context);
+					this.drawTile(x, y, context);
+				}
+				for (var entity in this.entities)
+				{
+					if (Math.round(this.entities[entity].oldY) == y)
+					{
+						this.entities[entity].draw(context);
+					}
 				}
 			}
+			currentTime = new Date().getTime();
 		}
-		currentTime = new Date().getTime();
 	}
 
 	this.drawLoop = function()
