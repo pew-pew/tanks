@@ -1,8 +1,10 @@
 const CELL_SIZE = 8;
+const DEFAULT_BG = "green";
 
 // Gotta have that - prevents lots of reloading not taken away by caching...
 // ...and also gives the game an option to pre-load images.
 var images = []
+var imagesReady = []
 
 var getImage = function(URI)
 {
@@ -19,6 +21,7 @@ var getImage = function(URI)
 		{
 			imagesReady[this.src] = true;
 		}
+		return images[URI];
 	}
 }
 
@@ -122,7 +125,7 @@ Level = function()
 	this.entities = [];
 	this.context = undefined;
 	this.doDrawing = true;
-
+	this.bgColor = DEFAULT_BG;
 	// Makes entities act
 
 	this.act = function(id, action)
@@ -196,7 +199,7 @@ Level = function()
 		var cuty = [0, 1, 3, 2][2 * neighbours[0] + neighbours[1]];
 
 		var cutx = [0, 1, 3, 2][2 * neighbours[2] + neighbours[3]];
-
+		
 		context.drawImage(this.palette[mytype], this.palette[mytype].width * cutx / 4, this.palette[mytype].height * cuty / 4, this.palette[mytype].width / 4, this.palette[mytype].height / 4, (x + 1) * CELL_SIZE - this.palette[mytype].width / 4, (y + 1) * CELL_SIZE - this.palette[mytype].height / 4, this.palette[mytype].width / 4, this.palette[mytype].height / 4);
 	}
 
@@ -204,6 +207,11 @@ Level = function()
 
 	this.draw = function(context)
 	{
+		for (var x = 0; x < this.field.length; x++)
+		{
+			context.fillStyle = this.bgColor;
+			context.fillRect(x * CELL_SIZE, 0, CELL_SIZE, this.field[x].length * CELL_SIZE);
+		}
 		if (this.field.length > 0)
 		{
 			for (var y = 0; y < this.field[0].length; y++)
@@ -240,7 +248,7 @@ Level = function()
 
 	this.setPalette = function(URIs)
 	{
-		this.palettes = []
+		this.palette = []
 		for (var i = 0; i < URIs.length; i++)
 		{
 			this.palette[i] = getImage(URIs[i]);

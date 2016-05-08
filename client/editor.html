@@ -4,17 +4,22 @@
 		<title>Creativity is le soul of tanks game</title>
 	</head>
 	<body>
-		<canvas width=800 height=600 id="editorCanvas" style="float: left; border:1px solid #000000; display: block; width: 600px; height: 600px;"></canvas>
+		<canvas width=800 height=600 id="editorCanvas" style="float: left; border:1px solid #000000; display: block; width: 800px; height: 600px;"></canvas>
+		<script type="text/javascript" src="./level.js"></script>
 		<script type="text/javascript" src="./editor.js"></script>
 		<div id="settings" style="float: right">
 			<p>Width:</p>
 			<input type="text" id="width">
 			<p>Height:</p>
 			<input type="text" id="height">
+			<button onclick="l.setBrush(0)">Air</button>
+			<button onclick="l.setBrush(1)">Metal</button>
+			<button onclick="l.setBrush(2)">Rock</button>
 			<br/>
 			<button onclick="generateLevel();">Apply changes</button>
 			<br/>
-			<button download="level.txt" onclick="download()">Download the level</button>
+			<a href="" download="level.txt" style="display: none;" id="link"></a>
+			<button onclick="download();">Download the level</button>
 			<br/>
 			<p id="error" style="color: red"></p>
 		</div>
