@@ -24,6 +24,20 @@ var Session = function(URI)
 		{
 			this.level.setField(message["field"]);
 		}
+		if ("preload" in message)
+		{
+			if ("images" in message["preload"])
+			{
+				for (var i in message["preload"]["images"])
+				{
+					getImage(message["preload"]["images"][i];
+				}
+			}
+			if ("sounds" in message["preload"])
+			{
+				// I'm a stub
+			}
+		}
 		if ("entities" in message)
 		{
 			for (var i in message["entities"])
