@@ -6,6 +6,40 @@ const DEFAULT_ADDR = "127.0.0.1:13337";
 
 var Session = function(URI)
 {
+	// Soundworks here
+
+	this.audioContext = new AudioContext();
+	this.sounds = [];
+
+	var getSound = function(URI, play)
+	{
+		if (URI in this.sounds)
+		{
+			if (play)
+			{
+				playSound(URI);
+			}
+			return;
+		}
+		var soundreq = new XMLHttpRequest();
+		soundreq.open('GET', URI, true);
+		soundreq.onload = function()
+		{
+			sounds[URI] = soundreq;
+			if (play)
+			{
+				playSound(URI);
+			}
+		}
+	}
+
+	var playSound = function(URI)
+	{
+		var src = this.audioContext.createBufferSource();
+		src.buffer = this.soounds[URI];
+		src.connect(context.destination);
+		src.start(0);
+	}
 	this.level = new Level();
 	this.socket = new WebSocket(URI);
 	this.socket.onOpen = function(event)
@@ -35,7 +69,10 @@ var Session = function(URI)
 			}
 			if ("sounds" in message["preload"])
 			{
-				// I'm a stub
+				for (var i in message["preload"]["sounds"])
+				{
+					getSound(message["preload"]["sounds"][i], false);
+				}
 			}
 		}
 		if ("entities" in message)
@@ -43,6 +80,13 @@ var Session = function(URI)
 			for (var i in message["entities"])
 			{
 				this.level.act(i, message["entities"][i]);
+			}
+		}
+		if ("sounds" in message)
+		{
+			for (var i in message["sounds"])
+			{
+				getSound(message["sounds"][i], true);
 			}
 		}
 	}
