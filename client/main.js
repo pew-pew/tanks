@@ -10,7 +10,7 @@ var Session = function(URI)
 
 	this.audioContext = new AudioContext();
 	this.sounds = [];
-
+	var intensity = 0;
 	var getSound = function(URI, play)
 	{
 		if (URI in this.sounds)
@@ -36,7 +36,7 @@ var Session = function(URI)
 	var playSound = function(URI)
 	{
 		var src = this.audioContext.createBufferSource();
-		src.buffer = this.soounds[URI];
+		src.buffer = this.sounds[URI];
 		src.connect(context.destination);
 		src.start(0);
 	}
@@ -64,7 +64,7 @@ var Session = function(URI)
 			{
 				for (var i in message["preload"]["images"])
 				{
-					getImage(message["preload"]["images"][i];
+					getImage(message["preload"]["images"][i]);
 				}
 			}
 			if ("sounds" in message["preload"])
@@ -88,6 +88,17 @@ var Session = function(URI)
 			{
 				getSound(message["sounds"][i], true);
 			}
+		}
+		if ("screenshake" in message)
+		{
+			
+			document.getElementById("gameCanvas").marginTop = Math.round((Math.random() - 0.5) * 2 * message["screenshake"]);
+			document.getElementById("gameCanvas").marginLeft = Math.round((Math.random() - 0.5) * 2 * message["screenshake"]);
+		}
+		else
+		{
+			document.getElementById("gameCanvas").marginTop = 0;
+			document.getElementById("gameCanvas").marginLeft = 0;
 		}
 	}
 	this.socket.onError = function(event)
