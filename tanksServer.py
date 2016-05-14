@@ -1,6 +1,7 @@
 import asyncio, json, sys, getopt
-import tanks
-from server import WSServer, Client
+from server.server import WSServer, Client
+from server.games.baseGame import Game
+from server.communication import GameInput
 
 
 HOST = "0.0.0.0"
@@ -75,23 +76,22 @@ clients = loop.run_until_complete(waitForQ(PLAYERS))
 pr("Starting game...")
 
 
-tanksGame = tanks.TanksGame(players = PLAYERS, field = FIELD)
+game = Game()
 
 while True:
-    inputs = []
+    inputs = {}
     for client in clients:
         if client.lastMessage == None:
-            data = {"dir": "pass", "fire": False}
+            data = GameInput('\00')
         else:
-            data = validatePlayerInput(client.lastMessage)
-        inputs.append(data)
-    #pr(inputs)
-    changes = tanksGame.do_tick(inputs)
-    changesS = json.dumps(changes)
+            data = GameInput(client.lastMessage)
+        inputs[client] = data
+    pr(inputs)
+    changes = game.do_tick(inputs)
     #pr(changesS)
     for client in clients:
-        client.send(changesS)
+        client.send(changes[client])
     
     
-    loop.run_until_complete(asyncio.sleep(1 / tanks.Consts(tanksGame.coords).TICK_RATE, loop=loop))
+    loop.run_until_complete(asyncio.sleep(1 / game.TICK_RATE, loop=loop))
     
