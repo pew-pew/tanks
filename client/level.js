@@ -79,7 +79,7 @@ var Entity = function(x, y, spriteURI)
 			this.dirVel -= delta;
 		}
 	}
-	// Draws the sprite on an internal canvas
+	// Draws the entity's sprite on an internal canvas
 
 	this.drawSprite = function()
 	{
@@ -95,7 +95,7 @@ var Entity = function(x, y, spriteURI)
 		this.updateSprite = false;
 	}
 
-	// Draws the sprite on the given context
+	// Draws the entity on the given context
 
 	this.draw = function(context)
 	{
@@ -122,7 +122,7 @@ Level = function()
 {
 	this.palette = [];
 	this.field = []; 
-	this.entities = [];
+	this.entities = {};
 	this.context = undefined;
 	this.doDrawing = true;
 	this.bgColor = DEFAULT_BG;
@@ -132,13 +132,11 @@ Level = function()
 	{
 		if (!(id in this.entities))
 		{
-			console.log(id)
 			this.entities[id] = new Entity(action["x"], action["y"], action["sprite"])
 			if ("dir" in action)
 			{
 				this.entities[id].oldDir = action["dir"];
 			}
-			console.log(this.entities)
 		}
 		if ('x' in action)
 		{
@@ -174,6 +172,7 @@ Level = function()
 
 	this.drawTile = function(x, y, context)
 	{
+
 		// First, we find the appropriate cutout by looking at our neighbours.
 
 		// The neighbour order is:  Up     Down   Left   Right
@@ -186,6 +185,14 @@ Level = function()
 		//V╚═╝
 
 		var mytype = this.field[x][y];
+
+		// Optimization for air
+
+		if (this.palette[mytype] === null)
+		{
+			return;
+		}
+
 		var neighbours = [];
 
 		neighbours[0] = (y != 0 && this.field[x][y - 1] == mytype);
@@ -199,14 +206,21 @@ Level = function()
 		var cuty = [0, 1, 3, 2][2 * neighbours[0] + neighbours[1]];
 
 		var cutx = [0, 1, 3, 2][2 * neighbours[2] + neighbours[3]];
-		
-		context.drawImage(this.palette[mytype], this.palette[mytype].width * cutx / 4, this.palette[mytype].height * cuty / 4, this.palette[mytype].width / 4, this.palette[mytype].height / 4, (x + 1) * CELL_SIZE - this.palette[mytype].width / 4, (y + 1) * CELL_SIZE - this.palette[mytype].height / 4, this.palette[mytype].width / 4, this.palette[mytype].height / 4);
+		try
+		{
+			context.drawImage(this.palette[mytype], this.palette[mytype].width * cutx / 4, this.palette[mytype].height * cuty / 4, this.palette[mytype].width / 4, this.palette[mytype].height / 4, (x + 1) * CELL_SIZE - this.palette[mytype].width / 4, (y + 1) * CELL_SIZE - this.palette[mytype].height / 4, this.palette[mytype].width / 4, this.palette[mytype].height / 4);
+		}
+		catch(err)
+		{
+			//console.log(err);
+		}
 	}
 
-	// Drawing functions: draws the level
+	// Drawing functions: draws the entire level
 
 	this.draw = function(context)
 	{
+		console.log(this.entities);
 		for (var x = 0; x < this.field.length; x++)
 		{
 			context.fillStyle = this.bgColor;
@@ -251,7 +265,14 @@ Level = function()
 		this.palette = []
 		for (var i = 0; i < URIs.length; i++)
 		{
-			this.palette[i] = getImage(URIs[i]);
+			if (URIs[i] === null)
+			{
+				this.palette[i] = null;
+			}
+			else
+			{
+				this.palette[i] = getImage(URIs[i]);
+			}
 		}
 	}
 

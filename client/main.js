@@ -42,11 +42,11 @@ var Session = function(URI)
 	}
 	this.level = new Level();
 	this.socket = new WebSocket(URI);
-	this.socket.onOpen = function(event)
+	onSocketOpen = function(event)
 	{
 		console.log("Connected!");
 	}
-	this.socket.onMessage = function(event)
+	onSocketMessage = function(event)
 	{
 		console.log("Message!");
 		var message = JSON.parse(event.data);
@@ -101,14 +101,19 @@ var Session = function(URI)
 			document.getElementById("gameCanvas").marginLeft = 0;
 		}
 	}
-	this.socket.onError = function(event)
+	onSocketError = function(event)
 	{
 		alert("Error!");
 	}
-	this.socket.onClose = function(event)
+	onSocketClose = function(event)
 	{
 		alert("Disconnected!");
 	}
+
+	this.socket.addEventListener("open", onSocketOpen.bind(this));
+	this.socket.addEventListener("message", onSocketMessage.bind(this));
+	this.socket.addEventListener("erroe", onSocketError.bind(this));
+	this.socket.addEventListener("close", onSocketClose.bind(this));
 
 	this.keys = {16: false, 32: false, 37: false, 38: false, 39: false, 40: false};
 	this.order = [38, 40, 37, 39, 32, 16]

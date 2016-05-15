@@ -1,4 +1,4 @@
-from server.communication import *
+from communication import *
 class Game:
 	
 	TICK_RATE = 20

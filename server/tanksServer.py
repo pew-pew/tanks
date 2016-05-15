@@ -1,7 +1,7 @@
 import asyncio, json, sys, getopt
-from server.server import WSServer, Client
-from server.games.baseGame import Game
-from server.communication import GameInput
+from server import WSServer, Client
+from games.testGame import TestGame
+from communication import GameInput
 
 
 HOST = "0.0.0.0"
@@ -76,7 +76,7 @@ clients = loop.run_until_complete(waitForQ(PLAYERS))
 pr("Starting game...")
 
 
-game = Game()
+game = TestGame()
 
 while True:
     inputs = {}
@@ -86,11 +86,12 @@ while True:
         else:
             data = GameInput(client.lastMessage)
         inputs[client] = data
-    pr(inputs)
+    #pr(inputs)
     changes = game.do_tick(inputs)
     #pr(changesS)
     for client in clients:
         client.send(changes[client])
+        pr(changes[client])
     
     
     loop.run_until_complete(asyncio.sleep(1 / game.TICK_RATE, loop=loop))
