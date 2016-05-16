@@ -79,6 +79,7 @@ pr("Starting game...")
 game = TestGame()
 
 while True:
+    clients = list(server.connected.values())
     inputs = {}
     for client in clients:
         if client.lastMessage == None:

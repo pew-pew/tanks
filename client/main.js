@@ -9,35 +9,43 @@ var Session = function(URI)
 	// Soundworks here
 
 	this.audioContext = new AudioContext();
-	this.sounds = [];
+	this.sounds = {};
 	var intensity = 0;
-	var getSound = function(URI, play)
+	this.getSound = function(URI, play)
 	{
 		if (URI in this.sounds)
 		{
 			if (play)
 			{
-				playSound(URI);
+				this.playSound(URI);
 			}
 			return;
 		}
 		var soundreq = new XMLHttpRequest();
-		soundreq.open('GET', URI, true);
-		soundreq.onload = function()
+		soundreq.open('GET', URI);
+		soundreq.responseType = 'arraybuffer';
+		soundreq.onload = function(e)
 		{
-			sounds[URI] = soundreq;
+			this.audioContext.decodeAudioData(soundreq.response, function(buffer)
+			{
+				this.sounds[URI] = buffer;
+			}.bind(this), function(e)
+			{
+				console.log(e);
+			});
 			if (play)
 			{
-				playSound(URI);
+				this.playSound(URI);
 			}
-		}
+		}.bind(this);
+		soundreq.send();
 	}
 
-	var playSound = function(URI)
+	this.playSound = function(URI)
 	{
 		var src = this.audioContext.createBufferSource();
 		src.buffer = this.sounds[URI];
-		src.connect(context.destination);
+		src.connect(this.audioContext.destination);
 		src.start(0);
 	}
 	this.level = new Level();
@@ -47,8 +55,7 @@ var Session = function(URI)
 		console.log("Connected!");
 	}
 	onSocketMessage = function(event)
-	{
-		console.log("Message!");
+	{ 
 		var message = JSON.parse(event.data);
 		if ("palette" in message)
 		{
@@ -64,15 +71,23 @@ var Session = function(URI)
 			{
 				for (var i in message["preload"]["images"])
 				{
-					getImage(message["preload"]["images"][i]);
+					this.level.getImage(message["preload"]["images"][i]);
 				}
 			}
 			if ("sounds" in message["preload"])
 			{
 				for (var i in message["preload"]["sounds"])
 				{
-					getSound(message["preload"]["sounds"][i], false);
+					this.getSound(message["preload"]["sounds"][i], false);
 				}
+			}
+		}
+		if ("blocks" in message)
+		{
+			for (var block in message["blocks"])
+			{
+				newblock = message["blocks"][block];
+				this.level.setBlock(newblock.x, newblock.y, newblock.type);
 			}
 		}
 		if ("entities" in message)
@@ -86,19 +101,19 @@ var Session = function(URI)
 		{
 			for (var i in message["sounds"])
 			{
-				getSound(message["sounds"][i], true);
+				this.getSound(message["sounds"][i], true);
 			}
 		}
 		if ("screenshake" in message)
 		{
-			
-			document.getElementById("gameCanvas").marginTop = Math.round((Math.random() - 0.5) * 2 * message["screenshake"]);
-			document.getElementById("gameCanvas").marginLeft = Math.round((Math.random() - 0.5) * 2 * message["screenshake"]);
+			console.log("ERBRBR");
+			document.getElementById("gameCanvas").style.marginTop = Math.round((Math.random() - 0.5) * 2 * message["screenshake"]).toString() + "px";
+			document.getElementById("gameCanvas").style.marginLeft = Math.round((Math.random() - 0.5) * 2 * message["screenshake"]).toString() + "px";
 		}
 		else
 		{
-			document.getElementById("gameCanvas").marginTop = 0;
-			document.getElementById("gameCanvas").marginLeft = 0;
+			document.getElementById("gameCanvas").style.marginTop = "0px";
+			document.getElementById("gameCanvas").style.marginLeft = "0px";
 		}
 	}
 	onSocketError = function(event)

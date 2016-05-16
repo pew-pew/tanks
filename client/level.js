@@ -106,7 +106,15 @@ var Entity = function(x, y, spriteURI)
 			{
 				this.drawSprite();
 			}
-			context.drawImage(this.spriteCanvas, CELL_SIZE * this.oldX, CELL_SIZE * this.oldY);
+			try
+			{
+				context.drawImage(this.spriteCanvas, CELL_SIZE * this.oldX, CELL_SIZE * this.oldY);
+			}
+			catch (e)
+			{
+				console.log(e);
+				this.drawSprite();
+			}
 		}
 	}
 }
@@ -220,7 +228,6 @@ Level = function()
 
 	this.draw = function(context)
 	{
-		console.log(this.entities);
 		for (var x = 0; x < this.field.length; x++)
 		{
 			context.fillStyle = this.bgColor;
@@ -258,6 +265,11 @@ Level = function()
 	this.setField = function(map)
 	{
 		this.field = map;
+	}
+
+	this.setBlock = function(x, y, type)
+	{
+		this.field[x][y] = type;
 	}
 
 	this.setPalette = function(URIs)
