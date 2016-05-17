@@ -106,7 +106,6 @@ var Session = function(URI)
 		}
 		if ("screenshake" in message)
 		{
-			console.log("ERBRBR");
 			document.getElementById("gameCanvas").style.marginTop = Math.round((Math.random() - 0.5) * 2 * message["screenshake"]).toString() + "px";
 			document.getElementById("gameCanvas").style.marginLeft = Math.round((Math.random() - 0.5) * 2 * message["screenshake"]).toString() + "px";
 		}

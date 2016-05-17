@@ -1,6 +1,6 @@
 import asyncio, json, sys, getopt
 from server import WSServer, Client
-from games.testGame import TestGame
+from games.baseTankGame import BaseTankGame
 from communication import GameInput
 
 
@@ -12,16 +12,6 @@ DEFAULT_FIELD = 'mega_battlefield.txt'
 def pr(*args, **kwargs):
     print(*args, **kwargs)
     sys.stdout.flush()
-
-def validatePlayerInput(string):
-    try:
-        data = json.loads(string)
-        if "dir" not in data or "fire" not in data: return None
-        if data["dir"] not in ["up", "down", "left", "right", "pass"]: return None
-        if data["fire"] not in [True, False]: return None
-        return data
-    except:
-        return None
 
 @asyncio.coroutine
 def waitForQ(q):
@@ -76,7 +66,7 @@ clients = loop.run_until_complete(waitForQ(PLAYERS))
 pr("Starting game...")
 
 
-game = TestGame()
+game = BaseTankGame()
 
 while True:
     clients = list(server.connected.values())
