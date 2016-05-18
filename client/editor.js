@@ -2,6 +2,8 @@ const DEFAULT_PALETTE = ["./resources/tilesets/air.png","./resources/tilesets/me
 
 var EditorSession = function(width, height)
 {
+	this.width = width;
+	this.height = height;
 	this.level = new Level();
 	this.level.setPalette(DEFAULT_PALETTE);
 	var map = [];
@@ -44,7 +46,10 @@ var EditorSession = function(width, height)
 			{
 				for (var iterY = Math.floor(this.mouseY / (5 * CELL_SIZE)) * 5; iterY < Math.floor(this.mouseY / (5 * CELL_SIZE)) * 5 + 5; iterY++)
 				{
-					this.level.field[iterX][iterY] = this.brush;
+					if (iterX < width && iterY < height && iterX >= 0 && iterY >= 0)
+					{
+						this.level.field[iterX][iterY] = this.brush;
+					}
 				}
 			}
 		}
@@ -52,17 +57,16 @@ var EditorSession = function(width, height)
 	
 	this.exportLevel = function()
 	{
-		var data = "data:text/plain;charset=utf-8,"
-		for (var i = 0; i < this.level.field.length; i++)
+		var level = {}
+		level.field = this.level.field;
+		level.points = this.level.entities;
+		level.palette = []
+		for (var i = 0; i < this.level.palette.length; i++)
 		{
-			for (var j = 0; j < this.level.field[i].length; j++)
-			{
-				data += this.level.field[i][j];
-			}
-			data += "%0D";
+			level.palette[i] = this.level.palette[i].src;
 		}
-		console.log(data);
-		return data;
+		console.log(JSON.stringify(level));
+		return "data:text," + JSON.stringify(level);
 	}
 	
 	document.getElementById("editorCanvas").addEventListener("mousedown", handleMouse.bind(this));
@@ -84,7 +88,13 @@ generateLevel = function()
 	else
 	{
 		document.getElementById("error").textContent = "";
-		l = new EditorSession(width_to * 5, height_to * 5)
+		l.level.alive = false;
+		delete l;
+		l = new EditorSession(width_to * 5, height_to * 5);
+		requestAnimationFrame(function()
+		{
+			document.getElementById("editorCanvas").width =	document.getElementById("editorCanvas").width;
+		});
 	}
 }
 

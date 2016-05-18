@@ -108,7 +108,7 @@ var Entity = function(x, y, spriteURI)
 			}
 			try
 			{
-				context.drawImage(this.spriteCanvas, CELL_SIZE * this.oldX, CELL_SIZE * this.oldY);
+				context.drawImage(this.spriteCanvas, CELL_SIZE * this.oldX - this.spriteCanvas.width / 2 + CELL_SIZE / 2, CELL_SIZE * this.oldY - this.spriteCanvas.height + this.spriteCanvas.width / 2 + CELL_SIZE / 2);
 			}
 			catch (e)
 			{
@@ -132,6 +132,7 @@ Level = function()
 	this.field = []; 
 	this.entities = {};
 	this.context = undefined;
+	this.alive = true;
 	this.doDrawing = true;
 	this.bgColor = DEFAULT_BG;
 	// Makes entities act
@@ -259,7 +260,10 @@ Level = function()
 		{
 			this.draw(this.context);
 		}
-		requestAnimationFrame(this.drawLoop.bind(this))
+		if (this.alive)
+		{
+			requestAnimationFrame(this.drawLoop.bind(this))
+		}
 	}
 
 	this.setField = function(map)
