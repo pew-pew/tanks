@@ -30,7 +30,9 @@ var currentTime = new Date().getTime();
 var Entity = function(x, y, spriteURI)
 {
 	this.oldX = x;
+	this.olderX = x;
 	this.oldY = y;
+	this.olderY = y;
 	this.newX = x;
 	this.newY = y;
 	this.vel = 0;
@@ -58,12 +60,16 @@ var Entity = function(x, y, spriteURI)
 		var delta = new Date().getTime() - currentTime;
 		if (delta >= this.vel)
 		{
+			this.olderX = this.oldX;
+			this.olderY = this.oldY;
 			this.oldX = this.newX;
 			this.oldY = this.newY;
 			this.vel = 0
 		}
 		else
 		{
+			this.olderX = this.oldX;
+			this.olderY = this.oldY;
 			this.oldX = (delta * this.newX + (this.vel - delta) * this.oldX) / this.vel;
 			this.oldY = (delta * this.newY + (this.vel - delta) * this.oldY) / this.vel;
 			this.vel -= delta;
@@ -99,7 +105,6 @@ var Entity = function(x, y, spriteURI)
 
 	this.draw = function(context)
 	{
-		this.update();
 		if (this.doDrawing)
 		{
 			if (this.updateSprite)
@@ -112,8 +117,7 @@ var Entity = function(x, y, spriteURI)
 			}
 			catch (e)
 			{
-				console.log(e);
-				this.drawSprite();
+				this.updateSprite = true;
 			}
 		}
 	}
@@ -130,6 +134,7 @@ Level = function()
 {
 	this.palette = [];
 	this.field = []; 
+	this.toUpdate = [];
 	this.entities = {};
 	this.context = undefined;
 	this.alive = true;
@@ -222,6 +227,7 @@ Level = function()
 		catch(err)
 		{
 			//console.log(err);
+			this.updateSprite = true;
 		}
 	}
 
@@ -229,10 +235,21 @@ Level = function()
 
 	this.draw = function(context)
 	{
+		for (var i in this.entities)
+		{
+			this.entities[i].update();
+			for (var j = Math.max(0, Math.floor(Math.min(this.entities[i].olderX, this.entities[i].oldX) - (this.entities[i].sprite.height / (2 * CELL_SIZE)))); j <= Math.min(this.field.length, Math.ceil(Math.max(this.entities[i].olderX, this.entities[i].oldX) + (this.entities[i].sprite.height / (2 * CELL_SIZE)) + 1)); j++)
+			{
+				this.toUpdate[j] = true;
+			}
+		}
+		context.fillStyle = this.bgColor;
 		for (var x = 0; x < this.field.length; x++)
 		{
-			context.fillStyle = this.bgColor;
-			context.fillRect(x * CELL_SIZE, 0, CELL_SIZE, this.field[x].length * CELL_SIZE);
+			if (this.toUpdate[x])
+			{
+				context.fillRect(x * CELL_SIZE, 0, CELL_SIZE, this.field[x].length * CELL_SIZE);
+			}
 		}
 		if (this.field.length > 0)
 		{
@@ -240,7 +257,10 @@ Level = function()
 			{
 				for (var x = 0; x < this.field.length; x++)
 				{
-					this.drawTile(x, y, context);
+					if (this.toUpdate[x])
+					{
+						this.drawTile(x, y, context);
+					}
 				}
 				for (var entity in this.entities)
 				{
@@ -249,6 +269,10 @@ Level = function()
 						this.entities[entity].draw(context);
 					}
 				}
+			}
+			for (var x = 0; x < this.field.length; x++)
+			{
+				this.toUpdate[x] = false;
 			}
 			currentTime = new Date().getTime();
 		}
@@ -269,11 +293,17 @@ Level = function()
 	this.setField = function(map)
 	{
 		this.field = map;
+		this.toUpdate = [];
+		for (var i = 0; i < this.field.length; i++)
+		{
+			this.toUpdate[i] = true;
+		}
 	}
 
 	this.setBlock = function(x, y, type)
 	{
 		this.field[x][y] = type;
+		this.toUpdate[x] = true;
 	}
 
 	this.setPalette = function(URIs)

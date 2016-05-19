@@ -137,6 +137,7 @@ var Session = function(URI)
 		if (event.keyCode in this.keys)
 		{
 			this.keys[event.keyCode] = (event.type == "keydown");
+			event.preventDefault();
 		}
 		var byteno = 0;
 		for (var i in this.order)
