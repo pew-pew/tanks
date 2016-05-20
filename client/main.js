@@ -11,6 +11,7 @@ var Session = function(URI)
 	this.audioContext = new AudioContext();
 	this.sounds = {};
 	var intensity = 0;
+	this.canvas = document.getElementById("gameCanvas");
 	this.getSound = function(URI, play)
 	{
 		if (URI in this.sounds)
@@ -56,63 +57,62 @@ var Session = function(URI)
 	}
 	onSocketMessage = function(event)
 	{ 
-		var message = JSON.parse(event.data);
-		if ("palette" in message)
+		this.message = JSON.parse(event.data);
+		if ("palette" in this.message)
 		{
-			this.level.setPalette(message["palette"]);
+			this.level.setPalette(this.message["palette"]);
 		}
-		if ("field" in message)
+		if ("field" in this.message)
 		{
-			this.level.setField(message["field"]);
+			this.level.setField(this.message["field"]);
 		}
-		if ("preload" in message)
+		if ("preload" in this.message)
 		{
-			if ("images" in message["preload"])
+			if ("images" in this.message["preload"])
 			{
-				for (var i in message["preload"]["images"])
+				for (var i in this.message["preload"]["images"])
 				{
-					this.level.getImage(message["preload"]["images"][i]);
+					this.level.getImage(this.message["preload"]["images"][i]);
 				}
 			}
-			if ("sounds" in message["preload"])
+			if ("sounds" in this.message["preload"])
 			{
-				for (var i in message["preload"]["sounds"])
+				for (var i in this.message["preload"]["sounds"])
 				{
-					this.getSound(message["preload"]["sounds"][i], false);
+					this.getSound(this.message["preload"]["sounds"][i], false);
 				}
 			}
 		}
-		if ("blocks" in message)
+		if ("blocks" in this.message)
 		{
-			for (var block in message["blocks"])
+			for (var block in this.message["blocks"])
 			{
-				newblock = message["blocks"][block];
-				this.level.setBlock(newblock.x, newblock.y, newblock.type);
+				this.level.setBlock(this.message["blocks"][block].x, this.message["blocks"][block].y, this.message["blocks"][block].type);
 			}
 		}
-		if ("entities" in message)
+		if ("entities" in this.message)
 		{
-			for (var i in message["entities"])
+			for (var i in this.message["entities"])
 			{
-				this.level.act(i, message["entities"][i]);
+				this.level.act(i, this.message["entities"][i]);
 			}
 		}
-		if ("sounds" in message)
+		if ("sounds" in this.message)
 		{
-			for (var i in message["sounds"])
+			for (var i in this.message["sounds"])
 			{
-				this.getSound(message["sounds"][i], true);
+				this.getSound(this.message["sounds"][i], true);
 			}
 		}
-		if ("screenshake" in message)
+		if ("screenshake" in this.message)
 		{
-			document.getElementById("gameCanvas").style.marginTop = Math.round((Math.random() - 0.5) * 2 * message["screenshake"]).toString() + "px";
-			document.getElementById("gameCanvas").style.marginLeft = Math.round((Math.random() - 0.5) * 2 * message["screenshake"]).toString() + "px";
+			this.canvas.style.marginTop = Math.round((Math.random() - 0.5) * 2 * this.message["screenshake"]).toString() + "px";
+			this.canvas.style.marginLeft = Math.round((Math.random() - 0.5) * 2 * this.message["screenshake"]).toString() + "px";
 		}
 		else
 		{
-			document.getElementById("gameCanvas").style.marginTop = "0px";
-			document.getElementById("gameCanvas").style.marginLeft = "0px";
+			this.canvas.style.marginTop = "0px";
+			this.canvas.style.marginLeft = "0px";
 		}
 	}
 	onSocketError = function(event)
@@ -156,8 +156,7 @@ var Session = function(URI)
 	addEventListener("keydown", this.handleKeys.bind(this));
 	addEventListener("keyup", this.handleKeys.bind(this));
 
-	this.level.context = document.getElementById("gameCanvas").getContext("2d");
-	this.level.drawLoop();
+	this.level.context = this.canvas.getContext("2d");
 }
 
 var addr = DEFAULT_ADDR;
@@ -166,3 +165,15 @@ if (window.location.search.split("?").length > 1)
 	addr = window.location.search.split("?")[1];
 }
 a = new Session("ws://" + addr);
+drawLoop = function()
+{
+	if (a.level.doDrawing)
+	{
+		a.level.draw(a.level.context);
+	}
+	if (a.level.alive)
+	{
+		requestAnimationFrame(drawLoop);
+	}
+}
+drawLoop();

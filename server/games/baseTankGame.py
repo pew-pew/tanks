@@ -1,4 +1,4 @@
-import json
+import json, random
 from communication import *
 
 class BaseTankGame:
@@ -16,6 +16,7 @@ class BaseTankGame:
 			self.timeout = 0
 			self.angle = 0
 			self.oldangle = 0
+			self.skin = random.randrange(4)
 
 		def canbe(self, x, y, level):
 			if x < 2 or y < 2 or x > len(level["field"]) - 3 or y > len(level["field"][x]) - 3:
@@ -57,7 +58,7 @@ class BaseTankGame:
 				return self.canbe(self.x, self.y, level)
 
 		def act(self):
-			self.response = {"x": self.x, "y": self.y, "sprite": "resources/entities/tank0.png", "vel": 1000 * self.timeout / BaseTankGame.TICK_RATE}
+			self.response = {"x": self.x, "y": self.y, "sprite": "resources/entities/tank{}.png".format(self.skin), "vel": 1000 * self.timeout / BaseTankGame.TICK_RATE}
 			if (self.oldangle != self.angle):
 				self.response["dir"] = self.angle
 				if (self.oldangle - self.angle + 360) % 360 < 180:
@@ -82,7 +83,6 @@ class BaseTankGame:
 		except ValueError:
 			print("GAME: Error loading map!")
 			self.level = {}
-		print(self.level)
 
 	def can_coexist(self, i, j):
 		ix1 = self.tanks[i].x + self.tanks[i].get_destination()[0] + self.tanks[i].get_bounds()[0][0]
@@ -118,21 +118,24 @@ class BaseTankGame:
 			else:
 				self.tanks[i].direction = "pass"
 		for i in self.tanks:
-			self.tanks[i].willgo = self.tanks[i].cango(self.level)
+			if not self.tanks[i].cango(self.level):
+				self.tanks[i].direction = "pass"
 		update = True
 		while update:
 			update = False
 			for i in self.tanks:
 				for j in self.tanks:
-					if i != j and self.tanks[i].willgo and self.tanks[j].willgo and not self.can_coexist(i, j):
-						self.tanks[i].willgo = False
-						self.tanks[j].willgo = False
+					if i != j and not self.can_coexist(i, j):
+						self.tanks[i].direction = "pass"
+						self.tanks[j].direction = "pass"
 						update = True
 		for i in self.tanks:
-			if self.tanks[i].willgo:
-				self.tanks[i].x += self.tanks[i].get_destination()[0]
-				self.tanks[i].y += self.tanks[i].get_destination()[1]
+			self.tanks[i].x += self.tanks[i].get_destination()[0]
+			self.tanks[i].y += self.tanks[i].get_destination()[1]
+			if self.tanks[i].direction != "pass":
 				self.tanks[i].timeout = self.tanks[i].MOVE_INTERVAL
+			else:
+				self.tanks[i].timeout = max(0, self.tanks[i].timeout - 1)
 			
 	def do_tick(self, user_inputs):
 		self.do_tank_tick(user_inputs)

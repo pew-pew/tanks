@@ -25,7 +25,8 @@ var getImage = function(URI)
 	}
 }
 
-var currentTime = new Date().getTime();
+var currentTime = Date.now();
+var delta = 0;
 
 var Entity = function(x, y, spriteURI)
 {
@@ -40,6 +41,7 @@ var Entity = function(x, y, spriteURI)
 	this.newDir = 0;
 	this.dirVel = 0;
 	this.sprite = getImage(spriteURI);
+	this.size = 0;
 	this.updateSprite = true;
 	this.doDrawing = true;
 	this.spriteCanvas = document.createElement("canvas");
@@ -50,14 +52,13 @@ var Entity = function(x, y, spriteURI)
 	this.spriteCanvas.width = Math.ceil(1.5 * this.sprite.height); 
 	this.spriteCanvas.height = Math.ceil(1.5 * this.sprite.height + this.sprite.width / this.sprite.height);
 	
-	this.update = function()
+	this.update = function(delta)
 	{
 		if (this.oldDir != this.newDir)
 		{
 			this.updateSprite = true;
 		}
 
-		var delta = new Date().getTime() - currentTime;
 		if (delta >= this.vel)
 		{
 			this.olderX = this.oldX;
@@ -89,6 +90,15 @@ var Entity = function(x, y, spriteURI)
 
 	this.drawSprite = function()
 	{
+		if (!this.sprite.complete)
+		{
+			return;
+		}
+		else if (this.size == 0)
+		{
+			this.size = Math.ceil(0.75 * this.sprite.height / CELL_SIZE);
+			console.log(this.size);
+		}
 		this.spriteCanvas.width = this.spriteCanvas.width;
 		this.spriteContext.translate(this.spriteCanvas.width / 2, this.spriteCanvas.height - this.spriteCanvas.width / 2);
 		for (var layer = 0; layer < this.sprite.width / this.sprite.height; layer++)
@@ -107,7 +117,12 @@ var Entity = function(x, y, spriteURI)
 	{
 		if (this.doDrawing)
 		{
-			if (this.updateSprite)
+			if (!this.sprite.complete)
+			{
+				this.updateSprite = true;
+				return;
+			}
+			else if (this.updateSprite)
 			{
 				this.drawSprite();
 			}
@@ -117,7 +132,11 @@ var Entity = function(x, y, spriteURI)
 			}
 			catch (e)
 			{
+				this.spriteCanvas = document.createElement("canvas");
+				this.spriteCanvas.width = Math.ceil(1.5 * this.sprite.height); 
+				this.spriteCanvas.height = Math.ceil(1.5 * this.sprite.height + this.sprite.width / this.sprite.height);
 				this.updateSprite = true;
+				this.spriteContext = this.spriteCanvas.getContext("2d")
 			}
 		}
 	}
@@ -133,8 +152,12 @@ var Entity = function(x, y, spriteURI)
 Level = function()
 {
 	this.palette = [];
+	this.tiles = [];
 	this.field = []; 
+	this.fieldUpdates = []; 
+	this.fieldStatus = []; 
 	this.toUpdate = [];
+	this.toUpdateNext = [];
 	this.entities = {};
 	this.context = undefined;
 	this.alive = true;
@@ -178,7 +201,25 @@ Level = function()
 		}
 		if ('sprite' in action)
 		{
-			this.entities[id].sprite.src = action["sprite"];
+			if (this.entities[id].sprite.src != action["sprite"])
+			{
+				this.sprite = getImage(action["sprite"]);
+			}
+		}
+	}
+
+	this.chopPalette = function(paletteno)
+	{
+		for (var i = 0; i < 4; i++)
+		{
+			for (var j = 0; j < 4; j++)
+			{
+				this.tiles[paletteno][i * 4 + j] = document.createElement("canvas");
+				this.tiles[paletteno][i * 4 + j].width = this.palette[paletteno].width / 4;
+				this.tiles[paletteno][i * 4 + j].height = this.palette[paletteno].height / 4;
+				var tilecontext = this.tiles[paletteno][i * 4 + j].getContext("2d");
+				tilecontext.drawImage(this.palette[paletteno], -this.palette[paletteno].width * i / 4, -this.palette[paletteno].height * j / 4);
+			}
 		}
 	}
 
@@ -186,17 +227,6 @@ Level = function()
 
 	this.drawTile = function(x, y, context)
 	{
-
-		// First, we find the appropriate cutout by looking at our neighbours.
-
-		// The neighbour order is:  Up     Down   Left   Right
-		
-		// The cutout goes like
-
-		//#<->
-		//^╔═╗
-		//|║╳║
-		//V╚═╝
 
 		var mytype = this.field[x][y];
 
@@ -207,27 +237,61 @@ Level = function()
 			return;
 		}
 
-		var neighbours = [];
+		// Wait until it's complete before drawing
 
-		neighbours[0] = (y != 0 && this.field[x][y - 1] == mytype);
+		if (!this.palette[mytype].complete)
+		{
+			this.toUpdateNext[x] = true;
+			return;
+		}
 
-		neighbours[1] = (y != this.field[x].length - 1  && this.field[x][y + 1] == mytype);
+		// Do we even have a freshly diced palette?
 
-		neighbours[2] = (x != 0 && this.field[x - 1][y] == mytype);
+		if (this.tiles[mytype].length == 0)
+		{
+			this.chopPalette(mytype);
+		}
 
-		neighbours[3] = (x != this.field.length - 1 && this.field[x + 1][y] == mytype);
+		if (this.fieldUpdates[x][y])
+		{
 
-		var cuty = [0, 1, 3, 2][2 * neighbours[0] + neighbours[1]];
+			// Find the appropriate cutout by looking at our neighbours.
+	
+			// The neighbour order is:  Up     Down   Left   Right
+			
+			// The cutout goes like
+	
+			//#<->
+			//^╔═╗
+			//|║╳║
+			//V╚═╝
 
-		var cutx = [0, 1, 3, 2][2 * neighbours[2] + neighbours[3]];
+			var neighbours = [];
+
+			neighbours[0] = (y != 0 && this.field[x][y - 1] == mytype);
+
+			neighbours[1] = (y != this.field[x].length - 1  && this.field[x][y + 1] == mytype);
+
+			neighbours[2] = (x != 0 && this.field[x - 1][y] == mytype);
+
+			neighbours[3] = (x != this.field.length - 1 && this.field[x + 1][y] == mytype);
+
+			var cuty = [0, 1, 3, 2][2 * neighbours[0] + neighbours[1]];
+
+			var cutx = [0, 1, 3, 2][2 * neighbours[2] + neighbours[3]];
+
+			this.fieldStatus[x][y] = cutx * 4 + cuty;
+
+			this.fieldUpdates[x][y] = false;
+		}
 		try
 		{
-			context.drawImage(this.palette[mytype], this.palette[mytype].width * cutx / 4, this.palette[mytype].height * cuty / 4, this.palette[mytype].width / 4, this.palette[mytype].height / 4, (x + 1) * CELL_SIZE - this.palette[mytype].width / 4, (y + 1) * CELL_SIZE - this.palette[mytype].height / 4, this.palette[mytype].width / 4, this.palette[mytype].height / 4);
+			context.drawImage(this.tiles[mytype][this.fieldStatus[x][y]], (x + 1) * CELL_SIZE - this.tiles[mytype][this.fieldStatus[x][y]].width, (y + 1) * CELL_SIZE - this.tiles[mytype][this.fieldStatus[x][y]].height);
 		}
 		catch(err)
 		{
-			//console.log(err);
-			this.updateSprite = true;
+			console.log(err);
+			this.toUpdateNext[x] = true;
 		}
 	}
 
@@ -235,10 +299,11 @@ Level = function()
 
 	this.draw = function(context)
 	{
+		delta = Date.now() - currentTime;
 		for (var i in this.entities)
 		{
-			this.entities[i].update();
-			for (var j = Math.max(0, Math.floor(Math.min(this.entities[i].olderX, this.entities[i].oldX) - (this.entities[i].sprite.height / (2 * CELL_SIZE)))); j <= Math.min(this.field.length, Math.ceil(Math.max(this.entities[i].olderX, this.entities[i].oldX) + (this.entities[i].sprite.height / (2 * CELL_SIZE)) + 1)); j++)
+			this.entities[i].update(delta);
+			for (var j = Math.max(0, Math.floor(Math.min(this.entities[i].olderX, this.entities[i].oldX) - this.entities[i].size)); j <= Math.min(this.field.length, Math.ceil(Math.max(this.entities[i].olderX, this.entities[i].oldX) + this.entities[i].size)); j++)
 			{
 				this.toUpdate[j] = true;
 			}
@@ -272,37 +337,51 @@ Level = function()
 			}
 			for (var x = 0; x < this.field.length; x++)
 			{
-				this.toUpdate[x] = false;
+				this.toUpdate[x] = this.toUpdateNext[x];
+				this.toUpdateNext[x] = false;
 			}
-			currentTime = new Date().getTime();
 		}
-	}
-
-	this.drawLoop = function()
-	{
-		if (this.doDrawing)
-		{
-			this.draw(this.context);
-		}
-		if (this.alive)
-		{
-			requestAnimationFrame(this.drawLoop.bind(this))
-		}
+		currentTime += delta;
 	}
 
 	this.setField = function(map)
 	{
 		this.field = map;
 		this.toUpdate = [];
+		this.toUpdateNext = [];
 		for (var i = 0; i < this.field.length; i++)
 		{
+			this.fieldStatus[i] = [];
+			this.fieldUpdates[i] = [];
 			this.toUpdate[i] = true;
+			this.toUpdateNext[i] = false;
+			for (var j = 0; j < this.field[i].length; j++)
+			{
+				this.fieldStatus[i][j] = 0;
+				this.fieldUpdates[i][j] = true;
+			}
 		}
 	}
 
 	this.setBlock = function(x, y, type)
 	{
 		this.field[x][y] = type;
+		if (x > 0)
+		{
+			this.fieldUpdates[x - 1][y] = true;
+		}
+		if (y > 0)
+		{
+			this.fieldUpdates[x][y - 1] = true;
+		}
+		if (x < this.field.length - 1)
+		{
+			this.fieldUpdates[x + 1][y] = true;
+		}
+		if (y < this.field[x].length - 1)
+		{
+			this.fieldUpdates[x][y + 1] = true;
+		}
 		this.toUpdate[x] = true;
 	}
 
@@ -314,10 +393,12 @@ Level = function()
 			if (URIs[i] === null)
 			{
 				this.palette[i] = null;
+				this.tiles[i] = null;
 			}
 			else
 			{
 				this.palette[i] = getImage(URIs[i]);
+				this.tiles[i] = [];
 			}
 		}
 	}
