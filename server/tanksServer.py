@@ -82,7 +82,7 @@ while True:
     #pr(changesS)
     for client in clients:
         client.send(changes[client])
-        pr(changes[client])
+        #pr(changes[client])
     
     
     loop.run_until_complete(asyncio.sleep(1 / game.TICK_RATE, loop=loop))

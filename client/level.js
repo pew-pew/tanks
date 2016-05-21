@@ -369,6 +369,7 @@ Level = function()
 		if (x > 0)
 		{
 			this.fieldUpdates[x - 1][y] = true;
+			this.toUpdate[x - 1] = true;
 		}
 		if (y > 0)
 		{
@@ -377,6 +378,7 @@ Level = function()
 		if (x < this.field.length - 1)
 		{
 			this.fieldUpdates[x + 1][y] = true;
+			this.toUpdate[x + 1] = true;
 		}
 		if (y < this.field[x].length - 1)
 		{

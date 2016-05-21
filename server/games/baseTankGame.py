@@ -1,4 +1,4 @@
-import json, random
+import json, random, copy
 from communication import *
 
 class BaseTankGame:
@@ -16,6 +16,8 @@ class BaseTankGame:
 			self.timeout = 0
 			self.angle = 0
 			self.oldangle = 0
+			self.die = False
+			self.firstAct = True
 			self.skin = random.randrange(4)
 
 		def canbe(self, x, y, level):
@@ -58,17 +60,31 @@ class BaseTankGame:
 				return self.canbe(self.x, self.y, level)
 
 		def act(self):
-			self.response = {"x": self.x, "y": self.y, "sprite": "resources/entities/tank{}.png".format(self.skin), "vel": 1000 * self.timeout / BaseTankGame.TICK_RATE}
+			self.baseResponse = {"x": self.x, "y": self.y, "vel": 1000 * self.timeout / BaseTankGame.TICK_RATE}
+			if self.firstAct:
+				self.baseResponse["sprite"] =  "resources/entities/tank{}.png".format(self.skin)
+				self.firstAct = False
+			self.deepResponse = {"x": self.x, "y": self.y, "sprite": "resources/entities/tank{}.png".format(self.skin)}
 			if (self.oldangle != self.angle):
-				self.response["dir"] = self.angle
+				self.baseResponse["dir"] = self.angle
 				if (self.oldangle - self.angle + 360) % 360 < 180:
-					self.response["dir"] *= -1
+					self.baseResponse["dir"] *= -1
 				if (self.oldangle - self.angle + 360) % 360 == 180:
-					self.response["dirvel"] = 0
+					self.baseResponse["dirvel"] = 0
 				else:
-					self.response["dirvel"] = 1000 * self.MOVE_INTERVAL / BaseTankGame.TICK_RATE
+					self.baseResponse["dirvel"] = 1000 * self.MOVE_INTERVAL / BaseTankGame.TICK_RATE
 				self.oldangle = self.angle
-			return self.response
+			if "dir" in self.baseResponse:
+				self.deepResponse["dir"] = self.baseResponse["dir"]
+			else:
+				self.deepResponse["dir"] = self.angle
+			return (self.baseResponse, self.deepResponse)
+	
+	class Bullet:
+		def __init__(self, x, y, direction):
+			self.x = x
+			self.y = y
+			self.direction = direction
 
 	tanks = dict()
 	def __init__(self, *args, **kwargs):
@@ -103,20 +119,24 @@ class BaseTankGame:
 
 	def do_tank_tick(self, user_inputs):
 		for i in self.tanks:
-			if user_inputs[i].up:
-				self.tanks[i].direction = "up"
-				self.tanks[i].angle = 360
-			elif user_inputs[i].down:
-				self.tanks[i].direction = "down"
-				self.tanks[i].angle = 180
-			elif user_inputs[i].left:
-				self.tanks[i].direction = "left"
-				self.tanks[i].angle = 270
-			elif user_inputs[i].right:
-				self.tanks[i].direction = "right"
-				self.tanks[i].angle = 90
-			else:
-				self.tanks[i].direction = "pass"
+			try:
+				if user_inputs[i].up:
+					self.tanks[i].direction = "up"
+					self.tanks[i].angle = 360
+				elif user_inputs[i].down:
+					self.tanks[i].direction = "down"
+					self.tanks[i].angle = 180
+				elif user_inputs[i].left:
+					self.tanks[i].direction = "left"
+					self.tanks[i].angle = 270
+				elif user_inputs[i].right:
+					self.tanks[i].direction = "right"
+					self.tanks[i].angle = 90
+				else:
+					self.tanks[i].direction = "pass"
+			except KeyError:
+				self.tanks[i].die = True
+				continue
 		for i in self.tanks:
 			if not self.tanks[i].cango(self.level):
 				self.tanks[i].direction = "pass"
@@ -140,14 +160,26 @@ class BaseTankGame:
 	def do_tick(self, user_inputs):
 		self.do_tank_tick(user_inputs)
 		# self.do_bullet_tick(user_inputs)
-		response = {}
+		baseResponse = {}
+		deepResponse = {}
 		entities = dict((str(tank), self.tanks[tank].act()) for tank in self.tanks)
+		baseResponse["entities"] = dict((i, entities[i][0]) for i in entities)
+		deepResponse["entities"] = dict((i, entities[i][1]) for i in entities)
+		topop = []
+		for i in self.tanks:
+			if i not in user_inputs:
+				topop.append(i)
+		for i in topop:
+			baseResponse["entities"][str(i)] = {"draw": False}
+			deepResponse["entities"].pop(str(i), None)
+			self.tanks.pop(i, None)
+		deepResponse["palette"] = self.level["palette"]
+		deepResponse["field"] = self.level["field"]
+		response = {}
 		for i in user_inputs:
-			response[i] = {}
-			response[i]["entities"] = entities
-			if i not in self.tanks:
-				response[i]["palette"] = self.level["palette"]
-				response[i]["field"] = self.level["field"]
+			if i in self.tanks:
+				response[i] = json.dumps(baseResponse)
+			else:
 				self.tanks[i] = self.Tank(7, 7)
-			response[i] = json.dumps(response[i])
+				response[i] = json.dumps(deepResponse)
 		return response

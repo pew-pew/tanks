@@ -1,4 +1,4 @@
-const DEFAULT_PALETTE = ["./resources/tilesets/air.png","./resources/tilesets/metal.png","./resources/tilesets/destro.png"]
+const DEFAULT_PALETTE = [null, "resources/tilesets/metal.png","./resources/tilesets/destro.png"]
 
 var EditorSession = function(width, height)
 {
@@ -48,7 +48,7 @@ var EditorSession = function(width, height)
 				{
 					if (iterX < width && iterY < height && iterX >= 0 && iterY >= 0)
 					{
-						this.level.field[iterX][iterY] = this.brush;
+						this.level.setBlock(iterX, iterY, this.brush);
 					}
 				}
 			}
@@ -63,7 +63,14 @@ var EditorSession = function(width, height)
 		level.palette = []
 		for (var i = 0; i < this.level.palette.length; i++)
 		{
-			level.palette[i] = this.level.palette[i].src;
+			if (this.level.palette[i] === null)
+			{
+				level.palette[i] = null;
+			}
+			else
+			{
+				level.palette[i] = this.level.palette[i].src;
+			}
 		}
 		console.log(JSON.stringify(level));
 		return "data:text," + JSON.stringify(level);
@@ -72,10 +79,23 @@ var EditorSession = function(width, height)
 	document.getElementById("editorCanvas").addEventListener("mousedown", handleMouse.bind(this));
 	document.getElementById("editorCanvas").addEventListener("mouseup", handleMouse.bind(this));
 	document.getElementById("editorCanvas").addEventListener("mousemove", handleMouse.bind(this));
-	this.level.drawLoop();
 }
 
 l = new EditorSession(100, 75)
+
+drawLoop = function()
+{
+	if (l.level.doDrawing)
+	{
+		l.level.draw(l.level.context);
+	}
+	if (l.level.alive)
+	{
+		requestAnimationFrame(drawLoop);
+	}
+}
+
+drawLoop();
 
 generateLevel = function()
 {
