@@ -66,7 +66,7 @@ clients = loop.run_until_complete(waitForQ(PLAYERS))
 pr("Starting game...")
 
 
-game = BaseTankGame(map="maps/mega_battlefield.txt")
+game = BaseTankGame(map="maps/test_board.txt")
 
 while True:
     clients = list(server.connected.values())

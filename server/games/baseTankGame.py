@@ -18,6 +18,12 @@ class BaseTankGame:
 			self.firstAct = True
 			self.timeout = 0;
 
+		def get_bounds(self):
+			return ((0, 0), (0, 0))
+
+		def get_destination(self):
+			return (0, 0)
+
 		def act(self):
 			self.baseResponse = {"x": self.x, "y": self.y, "vel": 1000 * self.timeout / BaseTankGame.TICK_RATE}
 			if self.firstAct:
@@ -114,6 +120,7 @@ class BaseTankGame:
 				self.deepResponse["dir"] = self.angle
 			return (self.baseResponse, self.deepResponse)
 	
+
 	class Bullet(Entity):
 		DIRS_X = {360: 0, 90: 1, 180: 0, 270: -1}
 		DIRS_Y = {360: -1, 90: 0, 180: 1, 270: 0}
@@ -149,6 +156,13 @@ class BaseTankGame:
 				self.timeout = self.MOVE_INTERVAL
 			return (self.baseResponse, self.deepResponse)
 		
+
+	class Spawnpoint(Entity):
+
+		def get_bounds(self):
+			return ((-2, 2), (-2, 2))
+
+
 	tanks = dict()
 	bullets = dict()
 	lastbullet = 0
@@ -180,8 +194,26 @@ class BaseTankGame:
 		return True
 
 	def process_map(self, mapdict):
+		mapdict["spawns"] = {}
+		topop = []
+		for i in mapdict["points"]:
+			if i.startswith("spawn_"):
+				mapdict["spawns"][i[6:]] = self.Spawnpoint(mapdict["points"][i]["x"], mapdict["points"][i]["y"])
+				topop.append(i)
+		for i in topop:
+			mapdict["points"].pop(i, None)
 		return mapdict
 
+	def get_spawn(self):
+		spawns = []
+		for i in self.level["spawns"]:
+			canSpawn = True
+			for j in self.tanks:
+				if not self.tanks[j].dead:
+					canSpawn = canSpawn and self.can_coexist(self.level["spawns"][i], self.tanks[j])
+			if canSpawn:
+				spawns.append(i)
+		return random.choice(spawns)
 	def do_tank_tick(self, user_inputs):
 		for i in self.tanks:
 			try:
@@ -224,6 +256,9 @@ class BaseTankGame:
 			if self.tanks[i].respawn > 0:
 				self.tanks[i].respawn -= 1
 			elif self.tanks[i].dead:
+				spawn = self.get_spawn()
+				self.tanks[i].x = self.level["spawns"][spawn].x
+				self.tanks[i].y = self.level["spawns"][spawn].y
 				self.tanks[i].dead = False
 
 	def do_bullet_tick(self, user_inputs):
@@ -281,6 +316,7 @@ class BaseTankGame:
 			if i in self.tanks:
 				response[i] = json.dumps(baseResponse)
 			else:
-				self.tanks[i] = self.Tank(7, 7)
+				spawn = self.get_spawn()
+				self.tanks[i] = self.Tank(self.level["spawns"][spawn].x, self.level["spawns"][spawn].y)
 				response[i] = json.dumps(deepResponse)
 		return response
