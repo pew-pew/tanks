@@ -1,5 +1,8 @@
 const DEFAULT_PALETTE = [null, "resources/tilesets/metal.png","./resources/tilesets/destro.png"]
 
+const POINT_BRUSH = -1;
+const ERASER_BRUSH = -2;
+const SELECTOR_BRUSH = -3;
 var EditorSession = function(width, height)
 {
 	this.width = width;
@@ -18,18 +21,37 @@ var EditorSession = function(width, height)
 	this.level.setField(map);
 	this.level.context = document.getElementById("editorCanvas").getContext("2d");
 	this.level.context.clearRect(0, 0, 800, 600);
+
+	// Useful mouse info
+
 	this.mouseDown = false;
+	this.mouseWasDown = false;
 	this.mouseX = 0;
 	this.mouseY = 0;
+
+	// The brush we're using: brush >= 0 - palette, brush <= 0 - entities
+
 	this.brush = 1;
+
+	// The next new point's number
+
+	this.pointNo = 1;
+
+	// The point we're editing: null if we aren't editing any
+
+	this.currentPoint = null;
 	
+
+
 	this.setBrush = function(no)
 	{
 		this.brush = no;
+		this.currentPoint = null;
 	}
 	
 	var handleMouse = function(event)
 	{
+		this.mouseWasDown = this.mouseDown;
 		if (event.type == "mousedown")
 		{
 			this.mouseDown = true;
@@ -42,13 +64,57 @@ var EditorSession = function(width, height)
 		this.mouseY = event.pageY - document.getElementById("editorCanvas").offsetTop;
 		if (this.mouseDown)
 		{
-			for (var iterX = Math.floor(this.mouseX / (5 * CELL_SIZE)) * 5; iterX < Math.floor(this.mouseX / (5 * CELL_SIZE)) * 5 + 5; iterX++)
+			if (this.brush == POINT_BRUSH)
 			{
-				for (var iterY = Math.floor(this.mouseY / (5 * CELL_SIZE)) * 5; iterY < Math.floor(this.mouseY / (5 * CELL_SIZE)) * 5 + 5; iterY++)
+				if (!this.mouseWasDown)
 				{
-					if (iterX < width && iterY < height && iterX >= 0 && iterY >= 0)
+					this.level.act("point_" + this.pointNo, {"x": 
+					Math.floor(this.mouseX / CELL_SIZE), "y": 
+					Math.floor(this.mouseY / CELL_SIZE)});
+					this.currentPoint = this.level.entities["point_" + this.pointNo]
+					this.currentPoint.name = "point_" + this.pointNo;
+					document.getElementById("pointName").value = "point_" + this.pointNo;
+					this.pointNo++;
+				}
+			}
+			else if (this.brush == ERASER_BRUSH)
+			{
+				if (!this.mouseWasDown)
+				{
+					for (var i in this.level.entities)
 					{
-						this.level.setBlock(iterX, iterY, this.brush);
+						if ((this.level.entities[i].newX == Math.floor(this.mouseX / CELL_SIZE)) && (this.level.entities[i].newY == Math.floor(this.mouseY / CELL_SIZE)))
+						{
+							this.level.toUpdateNext[this.level.entities[i].newX] = true;
+							delete this.level.entities[i];
+						}
+					}
+				}
+			}
+			else if (this.brush == SELECTOR_BRUSH)
+			{
+				if (!this.mouseWasDown)
+				{
+					for (var i in this.level.entities)
+					{
+						if ((this.level.entities[i].newX == Math.floor(this.mouseX / CELL_SIZE)) && (this.level.entities[i].newY == Math.floor(this.mouseY / CELL_SIZE)))
+						{
+							this.currentPoint = this.level.entities[i];
+							document.getElementById("pointName").value = this.level.entities[i].name;
+						}
+					}
+				}
+			}
+			else
+			{
+				for (var iterX = Math.floor(this.mouseX / (5 * CELL_SIZE)) * 5; iterX < Math.floor(this.mouseX / (5 * CELL_SIZE)) * 5 + 5; iterX++)
+				{
+					for (var iterY = Math.floor(this.mouseY / (5 * CELL_SIZE)) * 5; iterY < Math.floor(this.mouseY / (5 * CELL_SIZE)) * 5 + 5; iterY++)
+					{
+						if (iterX < width && iterY < height && iterX >= 0 && iterY >= 0)
+						{
+							this.level.setBlock(iterX, iterY, this.brush);
+						}
 					}
 				}
 			}
@@ -57,10 +123,15 @@ var EditorSession = function(width, height)
 	
 	this.exportLevel = function()
 	{
-		var level = {}
+		var level = {};
 		level.field = this.level.field;
-		level.points = this.level.entities;
-		level.palette = []
+		level.points = {};
+		for (var i in this.level.entities)
+		{
+			level.points[this.level.entities[i].name] = {"x": this.level.entities[i].newX, "y": this.level.entities[i].newY};
+		}
+		console.log(level.points);
+		level.palette = [];
 		for (var i = 0; i < this.level.palette.length; i++)
 		{
 			if (this.level.palette[i] === null)
@@ -85,6 +156,19 @@ l = new EditorSession(100, 75)
 
 drawLoop = function()
 {
+	// Check if we are editing a point. If so, open the point menu
+
+	if (l.currentPoint != null)
+	{
+		document.getElementById("pointEditor").style.visibility = "visible";
+		l.currentPoint.name = document.getElementById("pointName").value;
+	}
+	else
+	{
+		document.getElementById("pointEditor").style.visibility = "hidden";
+	}
+	// Now, draw the level
+
 	if (l.level.doDrawing)
 	{
 		l.level.draw(l.level.context);

@@ -5,16 +5,19 @@
 	</head>
 	<body>
 		<canvas width=800 height=600 id="editorCanvas" style="float: left; border:1px solid #000000; display: block; width: 800px; height: 600px;"></canvas>
-		<script type="text/javascript" src="./level.js"></script>
-		<script type="text/javascript" src="./editor.js"></script>
 		<div id="settings" style="float: right">
 			<p>Width:</p>
 			<input type="text" id="width">
 			<p>Height:</p>
 			<input type="text" id="height">
+			<br/>
 			<button onclick="l.setBrush(0)">Air</button>
 			<button onclick="l.setBrush(1)">Metal</button>
 			<button onclick="l.setBrush(2)">Rock</button>
+			<br/>
+			<button onclick="l.setBrush(-1)">Create point</button>
+			<button onclick="l.setBrush(-2)">Remove point</button>
+			<button onclick="l.setBrush(-3)">Edit point</button>
 			<br/>
 			<button onclick="generateLevel();">Apply changes</button>
 			<br/>
@@ -23,5 +26,12 @@
 			<br/>
 			<p id="error" style="color: red"></p>
 		</div>
+		<br/>
+		<div id="pointEditor" style="visibility: hidden; float: right; border: 1px solid black">
+			Point name:
+			<input type="text" id="pointName">
+		</div>
+		<script type="text/javascript" src="./level.js"></script>
+		<script type="text/javascript" src="./editor.js"></script>
 	</body>
 </html>

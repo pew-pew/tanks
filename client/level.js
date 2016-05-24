@@ -1,5 +1,6 @@
 const CELL_SIZE = 8;
 const DEFAULT_BG = "green";
+const DEFAULT_SPRITE = "resources/entities/1x1gridtest.png"
 
 // Gotta have that - prevents lots of reloading not taken away by caching...
 // ...and also gives the game an option to pre-load images.
@@ -97,7 +98,6 @@ var Entity = function(x, y, spriteURI)
 		else if (this.size == 0)
 		{
 			this.size = Math.ceil(0.75 * this.sprite.height / CELL_SIZE);
-			console.log(this.size);
 		}
 		this.spriteCanvas.width = this.spriteCanvas.width;
 		this.spriteContext.translate(this.spriteCanvas.width / 2, this.spriteCanvas.height - this.spriteCanvas.width / 2);
@@ -169,7 +169,14 @@ Level = function()
 	{
 		if (!(id in this.entities))
 		{
-			this.entities[id] = new Entity(action["x"], action["y"], action["sprite"])
+			if ("sprite" in action)
+			{
+				this.entities[id] = new Entity(action["x"], action["y"], action["sprite"])
+			}
+			else
+			{
+				this.entities[id] = new Entity(action["x"], action["y"], DEFAULT_SPRITE)
+			}
 			if ("dir" in action)
 			{
 				this.entities[id].oldDir = action["dir"];
