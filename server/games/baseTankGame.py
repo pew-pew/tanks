@@ -281,7 +281,7 @@ class BaseTankGame:
 							self.baseResponse["blocks"].append({"x": destrox, "y": destroy, "type": 0})
 						except KeyError:
 							self.baseResponse["blocks"] = [{"x": destrox, "y": destroy, "type": 0}]
-						for tang in range(0, 1):
+						for tang in range(0, 2):
 							for norm in range(-2, 3):
 								if (self.bullets[i].direction % 180 == 0):
 									if self.level["field"][destrox + norm][destroy + tang * self.bullets[i].DIRS_Y[self.bullets[i].direction]] == 2:
