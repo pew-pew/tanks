@@ -24,6 +24,19 @@ class BaseTankGame:
 		def get_destination(self):
 			return (0, 0)
 
+		def canbe(self, x, y, level):
+			bounds = self.get_bounds()
+			if x <  -bounds[0][0] or y < -bounds[1][0] or x > len(level["field"]) - 1 - bounds[0][1] or y > len(level["field"][x]) - 1 - bounds[1][1]:
+				return False
+			for iterX in range(x + bounds[0][0], x + bounds[0][1] + 1):
+				for iterY in range(y + bounds[1][0], y + bounds[1][1] + 1):
+					if (level["palette"][level["field"][iterX][iterY]] != None):
+						return False
+			return True
+
+		def cango(self, level):
+			return self.canbe(self.x + self.get_destination()[0], self.y + self.get_destination()[1], level)
+
 		def act(self):
 			self.baseResponse = {"x": self.x, "y": self.y, "vel": 1000 * self.timeout / BaseTankGame.TICK_RATE}
 			if self.firstAct:
@@ -50,15 +63,6 @@ class BaseTankGame:
 			self.firstAct = True
 			self.sprite = "resources/entities/tank{}.png".format(random.randrange(4))
 
-		def canbe(self, x, y, level):
-			if x < 2 or y < 2 or x > len(level["field"]) - 3 or y > len(level["field"][x]) - 3:
-				return False
-			for iterX in range(x - 2, x + 3):
-				for iterY in range(y - 2, y + 3):
-					if (level["palette"][level["field"][iterX][iterY]] != None):
-						return False
-			return True
-		
 		def get_bounds(self):
 			return ((-2, 2), (-2, 2))
 
@@ -88,16 +92,7 @@ class BaseTankGame:
 			if self.timeout > 0:
 				self.timeout -= 1
 				return self.direction == "pass"
-			if self.direction == 'up':
-				return self.canbe(self.x, self.y - 1, level)
-			elif self.direction == 'left':
-				return self.canbe(self.x - 1, self.y, level)
-			elif self.direction == 'right':
-				return self.canbe(self.x + 1, self.y, level)
-			elif self.direction == 'down':
-				return self.canbe(self.x, self.y + 1, level)
-			else:
-				return self.canbe(self.x, self.y, level)
+			return super(BaseTankGame.Tank, self).cango(level)
 
 		def act(self):
 			self.baseResponse = {"x": self.x, "y": self.y, "vel": 1000 * self.timeout / BaseTankGame.TICK_RATE}
@@ -138,9 +133,6 @@ class BaseTankGame:
 
 		def get_destination(self):
 			return (self.DIRS_X[self.direction], self.DIRS_Y[self.direction])
-
-		def get_bounds(self):
-			return ((0, 0), (0, 0))
 
 		def act(self):
 			self.baseResponse = {"x": self.x, "y": self.y, "vel": 1000 * self.timeout / BaseTankGame.TICK_RATE}
@@ -214,6 +206,7 @@ class BaseTankGame:
 			if canSpawn:
 				spawns.append(i)
 		return random.choice(spawns)
+
 	def do_tank_tick(self, user_inputs):
 		for i in self.tanks:
 			try:
@@ -278,45 +271,66 @@ class BaseTankGame:
 					self.bullets[i].dead = True
 					self.tanks[j].dead = True
 					self.tanks[j].respawn = self.tanks[j].RESPAWN_TIME
+				if not self.bullets[i].canbe(self.bullets[i].x, self.bullets[i].y, self.level):
+					self.bullets[i].dead = True
+					destrox = self.bullets[i].x
+					destroy = self.bullets[i].y
+					if self.level["field"][destrox][destroy] == 2:
+						self.level["field"][destrox][destroy] = 0
+						try:
+							self.baseResponse["blocks"].append({"x": destrox, "y": destroy, "type": 0})
+						except KeyError:
+							self.baseResponse["blocks"] = [{"x": destrox, "y": destroy, "type": 0}]
+						for tang in range(0, 1):
+							for norm in range(-2, 3):
+								if (self.bullets[i].direction % 180 == 0):
+									if self.level["field"][destrox + norm][destroy + tang * self.bullets[i].DIRS_Y[self.bullets[i].direction]] == 2:
+										self.level["field"][destrox + norm][destroy + tang * self.bullets[i].DIRS_Y[self.bullets[i].direction]] = 0
+										self.baseResponse["blocks"].append({"x": destrox + norm, "y": destroy + tang * self.bullets[i].DIRS_Y[self.bullets[i].direction], "type": 0})
+								else:
+										
+									if self.level["field"][destrox + tang * self.bullets[i].DIRS_X[self.bullets[i].direction]][destroy + norm] == 2:
+										self.level["field"][destrox + tang * self.bullets[i].DIRS_X[self.bullets[i].direction]][destroy + norm] = 0
+										self.baseResponse["blocks"].append({"x": destrox + tang * self.bullets[i].DIRS_X[self.bullets[i].direction], "y": destroy + norm, "type": 0})
 			
 	def do_tick(self, user_inputs):
+		self.baseResponse = {}
+		self.deepResponse = {}
 		self.do_tank_tick(user_inputs)
 		self.do_bullet_tick(user_inputs)
-		baseResponse = {}
-		deepResponse = {}
 		entities = dict((str(tank), self.tanks[tank].act()) for tank in self.tanks)
 		for i in self.bullets:
 			entities[i] = self.bullets[i].act()
-		baseResponse["entities"] = dict((i, entities[i][0]) for i in entities)
-		deepResponse["entities"] = dict((i, entities[i][1]) for i in entities)
+		self.baseResponse["entities"] = dict((i, entities[i][0]) for i in entities)
+		self.deepResponse["entities"] = dict((i, entities[i][1]) for i in entities)
 		topop = []
 		for i in self.bullets:
 			if self.bullets[i].dead:
 				topop.append(i)
 		for i in topop:
-			baseResponse["entities"][str(i)] = {"draw": False}
-			deepResponse["entities"].pop(str(i), None)
+			self.baseResponse["entities"][str(i)] = {"draw": False}
+			self.deepResponse["entities"].pop(str(i), None)
 			self.bullets.pop(i, None)
 		topop = []
 		for i in self.tanks:
 			if self.tanks[i].dead:
-				baseResponse["entities"][str(i)]["draw"] = False
+				self.baseResponse["entities"][str(i)]["draw"] = False
 			else:
-				baseResponse["entities"][str(i)]["draw"] = True
+				self.baseResponse["entities"][str(i)]["draw"] = True
 			if i not in user_inputs:
 				topop.append(i)
 		for i in topop:
-			baseResponse["entities"][str(i)] = {"draw": False}
-			deepResponse["entities"].pop(str(i), None)
+			self.baseResponse["entities"][str(i)] = {"draw": False}
+			self.deepResponse["entities"].pop(str(i), None)
 			self.tanks.pop(i, None)
-		deepResponse["palette"] = self.level["palette"]
-		deepResponse["field"] = self.level["field"]
+		self.deepResponse["palette"] = self.level["palette"]
+		self.deepResponse["field"] = self.level["field"]
 		response = {}
 		for i in user_inputs:
 			if i in self.tanks:
-				response[i] = json.dumps(baseResponse)
+				response[i] = json.dumps(self.baseResponse)
 			else:
 				spawn = self.get_spawn()
 				self.tanks[i] = self.Tank(self.level["spawns"][spawn].x, self.level["spawns"][spawn].y)
-				response[i] = json.dumps(deepResponse)
+				response[i] = json.dumps(self.deepResponse)
 		return response

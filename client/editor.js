@@ -1,5 +1,6 @@
 const DEFAULT_PALETTE = [null, "resources/tilesets/metal.png","./resources/tilesets/destro.png"]
 
+const POINT_SPRITE = "resources/entities/flag.png"
 const POINT_BRUSH = -1;
 const ERASER_BRUSH = -2;
 const SELECTOR_BRUSH = -3;
@@ -70,7 +71,7 @@ var EditorSession = function(width, height)
 				{
 					this.level.act("point_" + this.pointNo, {"x": 
 					Math.floor(this.mouseX / CELL_SIZE), "y": 
-					Math.floor(this.mouseY / CELL_SIZE)});
+					Math.floor(this.mouseY / CELL_SIZE), "sprite": POINT_SPRITE});
 					this.currentPoint = this.level.entities["point_" + this.pointNo]
 					this.currentPoint.name = "point_" + this.pointNo;
 					document.getElementById("pointName").value = "point_" + this.pointNo;
