@@ -72,7 +72,7 @@ var Session = function(URI)
 			{
 				for (var i in this.message["preload"]["images"])
 				{
-					this.level.getImage(this.message["preload"]["images"][i]);
+					getImage(this.message["preload"]["images"][i]);
 				}
 			}
 			if ("sounds" in this.message["preload"])

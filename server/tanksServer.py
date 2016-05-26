@@ -7,7 +7,7 @@ from communication import GameInput
 HOST = "0.0.0.0"
 DEFAULT_PORT = 13337
 DEFAULT_PLAYERS = 1
-DEFAULT_FIELD = 'mega_battlefield.txt'
+DEFAULT_FIELD = 'maps/mega_battlefield.txt'
 
 def pr(*args, **kwargs):
     print(*args, **kwargs)
@@ -66,7 +66,7 @@ clients = loop.run_until_complete(waitForQ(PLAYERS))
 pr("Starting game...")
 
 
-game = BaseTankGame(map="maps/test_board.txt")
+game = BaseTankGame(map=FIELD)
 
 while True:
     clients = list(server.connected.values())

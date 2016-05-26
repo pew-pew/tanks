@@ -6,6 +6,8 @@ class BaseTankGame:
 	DEFAULT_MAP = "maps/test_board.txt"
 	TICK_RATE = 45
 	BULLET_MODULO = 100
+	SHOOT_SOUND = "resources/sounds/tankShot.wav"
+	EXPLODE_SOUND = "resources/sounds/tankExplode.wav"
 
 	class Entity:
 		
@@ -158,6 +160,8 @@ class BaseTankGame:
 	tanks = dict()
 	bullets = dict()
 	lastbullet = 0
+	screenshakeIntensity = 0
+	screenshakeDuration = 0
 	def __init__(self, *args, **kwargs):
 		mapfile = self.DEFAULT_MAP
 		if ("map" in kwargs):
@@ -184,6 +188,20 @@ class BaseTankGame:
 			if (iy1 >= jy1 and iy1 <= jy2) or (iy2 >= jy1 and iy2 <= jy2) or (jy1 >= iy1 and jy1 <= iy2) or (jy2 >= iy1 and jy2 <= iy2):
 				return False
 		return True
+
+	def shake_screen(self, intensity, duration):
+		self.screenshakeIntensity = max(self.screenshakeIntensity, intensity)
+		self.screenshakeDuration = max(self.screenshakeDuration, duration)
+
+	def play_sound(self, sound):
+		try:
+			self.baseResponse["sounds"].append(sound)
+		except KeyError:
+			self.baseResponse["sounds"] = [sound]
+		try:
+			self.deepResponse["sounds"].append(sound)
+		except KeyError:
+			self.deepResponse["sounds"] = [sound]
 
 	def process_map(self, mapdict):
 		mapdict["spawns"] = {}
@@ -260,6 +278,8 @@ class BaseTankGame:
 				continue
 			self.tanks[i].bulletcooldown = max(0, self.tanks[i].bulletcooldown - 1)
 			if user_inputs[i].attack and self.tanks[i].bulletcooldown == 0:
+				self.play_sound(self.SHOOT_SOUND)
+				self.shake_screen(2, 5)
 				newbullet = self.Bullet(*self.tanks[i].get_bullet_spawn() + (self.tanks[i].angle,))
 				newbullet.ID = self.lastbullet
 				self.lastbullet = (self.lastbullet + 1) % self.BULLET_MODULO
@@ -271,6 +291,8 @@ class BaseTankGame:
 					self.bullets[i].dead = True
 					self.tanks[j].dead = True
 					self.tanks[j].respawn = self.tanks[j].RESPAWN_TIME
+					self.shake_screen(20, 10)
+					self.play_sound(self.EXPLODE_SOUND)
 				if not self.bullets[i].canbe(self.bullets[i].x, self.bullets[i].y, self.level):
 					self.bullets[i].dead = True
 					destrox = self.bullets[i].x
@@ -295,12 +317,19 @@ class BaseTankGame:
 			
 	def do_tick(self, user_inputs):
 		self.baseResponse = {}
-		self.deepResponse = {}
+		self.deepResponse = {"preload":{"images": ["resources/entities/tank0.png", "resources/entities/tank1.png", "resources/entities/tank2.png", "resources/entities/tank3.png"], "sounds": [self.SHOOT_SOUND, self.EXPLODE_SOUND]}}
 		self.do_tank_tick(user_inputs)
 		self.do_bullet_tick(user_inputs)
 		entities = dict((str(tank), self.tanks[tank].act()) for tank in self.tanks)
 		for i in self.bullets:
 			entities[i] = self.bullets[i].act()
+		if self.screenshakeDuration > 0:
+			self.screenshakeDuration -= 1
+			self.baseResponse["screenshake"] = self.screenshakeIntensity
+			self.deepResponse["screenshake"] = self.screenshakeIntensity
+			if self.screenshakeDuration == 0:
+				self.screenshakeIntensity = 0
+
 		self.baseResponse["entities"] = dict((i, entities[i][0]) for i in entities)
 		self.deepResponse["entities"] = dict((i, entities[i][1]) for i in entities)
 		topop = []
