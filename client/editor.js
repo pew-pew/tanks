@@ -87,7 +87,7 @@ var EditorSession = function(width, height)
 						if ((this.level.entities[i].newX == Math.floor(this.mouseX / CELL_SIZE)) && (this.level.entities[i].newY == Math.floor(this.mouseY / CELL_SIZE)))
 						{
 							this.level.toUpdateNext[this.level.entities[i].newX] = true;
-							delete this.level.entities[i];
+							this.level.remove(i);
 						}
 					}
 				}

@@ -163,6 +163,7 @@ Level = function()
 	this.alive = true;
 	this.doDrawing = true;
 	this.bgColor = DEFAULT_BG;
+
 	// Makes entities act
 
 	this.act = function(id, action)
@@ -213,6 +214,18 @@ Level = function()
 				this.sprite = getImage(action["sprite"]);
 			}
 		}
+	}
+
+	this.remove = function(id)
+	{
+		if (id in this.entities)
+		{
+			for (var j = Math.max(0, Math.floor(Math.min(this.entities[id].olderX, this.entities[id].oldX) - this.entities[id].size)); j <= Math.min(this.field.length, Math.ceil(Math.max(this.entities[id].olderX, this.entities[id].oldX) + this.entities[id].size)); j++)
+			{
+				this.toUpdate[j] = true;
+			}
+		}
+		delete this.entities[id]
 	}
 
 	this.chopPalette = function(paletteno)

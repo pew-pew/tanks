@@ -19,6 +19,7 @@ class BaseTankGame:
 			self.sprite = "resources/entities/5x5gridtest.png"
 			self.firstAct = True
 			self.timeout = 0;
+			self.dead = False
 
 		def get_bounds(self):
 			return ((0, 0), (0, 0))
@@ -176,6 +177,8 @@ class BaseTankGame:
 			self.level = {}
 
 	def can_coexist(self, i, j):
+		if (i.dead or j.dead):
+			return True
 		ix1 = i.x + i.get_destination()[0] + i.get_bounds()[0][0]
 		ix2 = i.x + i.get_destination()[0] + i.get_bounds()[0][1]
 		iy1 = i.y + i.get_destination()[1] + i.get_bounds()[1][0]
