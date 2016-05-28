@@ -20,6 +20,10 @@ var EditorSession = function(width, height)
 		}
 	}
 	this.level.setField(map);
+	if (this.width * CELL_SIZE <= VIEWPORT_WIDTH && this.height * CELL_SIZE <= VIEWPORT_HEIGHT)
+	{
+		this.level.act(".focus", {"x": this.width / 2, "y": this.height / 2, "vel": 0});
+	}
 	this.level.context = document.getElementById("editorCanvas").getContext("2d");
 	this.level.context.clearRect(0, 0, 800, 600);
 
@@ -61,8 +65,8 @@ var EditorSession = function(width, height)
 		{
 			this.mouseDown = false;
 		}
-		this.mouseX = event.pageX - document.getElementById("editorCanvas").offsetLeft;
-		this.mouseY = event.pageY - document.getElementById("editorCanvas").offsetTop;
+		this.mouseX = event.pageX - document.getElementById("editorCanvas").offsetLeft - VIEWPORT_WIDTH / 2 + this.level.entities[".focus"].oldX * CELL_SIZE;
+		this.mouseY = event.pageY - document.getElementById("editorCanvas").offsetTop - VIEWPORT_HEIGHT / 2 + this.level.entities[".focus"].oldY * CELL_SIZE;
 		if (this.mouseDown)
 		{
 			if (this.brush == POINT_BRUSH)

@@ -1,6 +1,8 @@
 const CELL_SIZE = 8;
 const DEFAULT_BG = "green";
 const DEFAULT_SPRITE = "resources/entities/1x1gridtest.png"
+const VIEWPORT_WIDTH = 800;
+const VIEWPORT_HEIGHT = 600;
 
 // Gotta have that - prevents lots of reloading not taken away by caching...
 // ...and also gives the game an option to pre-load images.
@@ -132,11 +134,12 @@ var Entity = function(x, y, spriteURI)
 			}
 			catch (e)
 			{
+				console.log("Exception " + e + " when drawing entity");
 				this.spriteCanvas = document.createElement("canvas");
 				this.spriteCanvas.width = Math.ceil(1.5 * this.sprite.height); 
 				this.spriteCanvas.height = Math.ceil(1.5 * this.sprite.height + this.sprite.width / this.sprite.height);
 				this.updateSprite = true;
-				this.spriteContext = this.spriteCanvas.getContext("2d")
+				this.spriteContext = this.spriteCanvas.getContext("2d");
 			}
 		}
 	}
@@ -151,18 +154,19 @@ var Entity = function(x, y, spriteURI)
 
 Level = function()
 {
-	this.palette = [];
-	this.tiles = [];
-	this.field = []; 
-	this.fieldUpdates = []; 
-	this.fieldStatus = []; 
-	this.toUpdate = [];
-	this.toUpdateNext = [];
-	this.entities = {};
-	this.context = undefined;
-	this.alive = true;
-	this.doDrawing = true;
-	this.bgColor = DEFAULT_BG;
+	this.palette = [];						// Array of tileset URIs used
+	this.tiles = [];						// The optimized form of palette, storing ready-to-use sprites
+	this.field = []; 						// The level's tile map
+	this.fieldUpdates = []; 					// Which tiles' neighbours to update
+	this.fieldStatus = []; 						// Adjacent tile bitmask for every tile - costly to update!
+	this.toUpdate = [];						// Which rows do we redraw
+	this.toUpdateNext = [];						// Which rows will we redraw next frame - used in case of drawing fault
+	this.entities = {};						// Dictionary of id-entity pairs
+	this.levelCanvas = document.createElement("canvas");		// Canvas that we're storing the level on
+	this.levelContext = this.levelCanvas.getContext("2d");		// The context of that canvas - would rather not find out every frame!
+	this.alive = true;						// Tells if this level is still relevant and should be bothered drawing
+	this.doDrawing = true;						// Tells if this level should be drawn, yet doesn't kill the draw loop
+	this.bgColor = DEFAULT_BG;					// What color is the background
 
 	// Makes entities act
 
@@ -216,6 +220,8 @@ Level = function()
 		}
 	}
 
+	// Removes an entity
+
 	this.remove = function(id)
 	{
 		if (id in this.entities)
@@ -227,6 +233,8 @@ Level = function()
 		}
 		delete this.entities[id]
 	}
+
+	// Initializes a tileset
 
 	this.chopPalette = function(paletteno)
 	{
@@ -317,7 +325,7 @@ Level = function()
 
 	// Drawing functions: draws the entire level
 
-	this.draw = function(context)
+	this.drawLevel = function()
 	{
 		delta = Date.now() - currentTime;
 		for (var i in this.entities)
@@ -328,12 +336,12 @@ Level = function()
 				this.toUpdate[j] = true;
 			}
 		}
-		context.fillStyle = this.bgColor;
+		this.levelContext.fillStyle = this.bgColor;
 		for (var x = 0; x < this.field.length; x++)
 		{
 			if (this.toUpdate[x])
 			{
-				context.fillRect(x * CELL_SIZE, 0, CELL_SIZE, this.field[x].length * CELL_SIZE);
+				this.levelContext.fillRect(x * CELL_SIZE, 0, CELL_SIZE, this.field[x].length * CELL_SIZE);
 			}
 		}
 		if (this.field.length > 0)
@@ -344,14 +352,14 @@ Level = function()
 				{
 					if (this.toUpdate[x])
 					{
-						this.drawTile(x, y, context);
+						this.drawTile(x, y, this.levelContext);
 					}
 				}
 				for (var entity in this.entities)
 				{
 					if (Math.round(this.entities[entity].oldY) == y)
 					{
-						this.entities[entity].draw(context);
+						this.entities[entity].draw(this.levelContext);
 					}
 				}
 			}
@@ -364,9 +372,25 @@ Level = function()
 		currentTime += delta;
 	}
 
+	// Drawing functions: ports a canvas with a ready level to a viewport, centering on the ".focus" object
+	this.port = function(context)
+	{
+		context.drawImage(this.levelCanvas, -CELL_SIZE * this.entities[".focus"].oldX + VIEWPORT_WIDTH / 2, -CELL_SIZE * this.entities[".focus"].oldY + VIEWPORT_HEIGHT / 2);
+	}
+
+	this.draw = function(context)
+	{
+		this.drawLevel();
+		this.port(context);
+	}
+
 	this.setField = function(map)
 	{
 		this.field = map;
+		this.levelCanvas = document.createElement("canvas");
+		this.levelCanvas.width = this.field.length * CELL_SIZE;
+		this.levelCanvas.height = this.field[0].length * CELL_SIZE;
+		this.levelContext = this.levelCanvas.getContext("2d");
 		this.toUpdate = [];
 		this.toUpdateNext = [];
 		for (var i = 0; i < this.field.length; i++)
@@ -401,10 +425,7 @@ Level = function()
 			this.toUpdate[x + 1] = true;
 		}
 		if (y < this.field[x].length - 1)
-		{
-			this.fieldUpdates[x][y + 1] = true;
-		}
-		this.toUpdate[x] = true;
+		{ this.fieldUpdates[x][y + 1] = true; } this.toUpdate[x] = true;
 	}
 
 	this.setPalette = function(URIs)
@@ -425,4 +446,7 @@ Level = function()
 		}
 	}
 
+	// Initialize .focus so that we know what we're looking at
+
+	this.act(".focus", {"x": VIEWPORT_WIDTH / (2 * CELL_SIZE), "y": VIEWPORT_HEIGHT / (2 * CELL_SIZE), "draw": false});
 }
