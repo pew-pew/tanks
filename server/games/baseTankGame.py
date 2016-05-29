@@ -357,6 +357,7 @@ class BaseTankGame:
 			self.tanks.pop(i, None)
 		self.deepResponse["palette"] = self.level["palette"]
 		self.deepResponse["field"] = self.level["field"]
+		self.deepResponse["entities"][".focus"] = {"x": len(self.level["field"]) / 2, "y": len(self.level["field"][0]) / 2}
 		response = {}
 		for i in user_inputs:
 			if i in self.tanks:

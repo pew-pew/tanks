@@ -90,7 +90,6 @@ var EditorSession = function(width, height)
 					{
 						if ((this.level.entities[i].newX == Math.floor(this.mouseX / CELL_SIZE)) && (this.level.entities[i].newY == Math.floor(this.mouseY / CELL_SIZE)))
 						{
-							this.level.toUpdateNext[this.level.entities[i].newX] = true;
 							this.level.remove(i);
 						}
 					}
@@ -133,9 +132,11 @@ var EditorSession = function(width, height)
 		level.points = {};
 		for (var i in this.level.entities)
 		{
-			level.points[this.level.entities[i].name] = {"x": this.level.entities[i].newX, "y": this.level.entities[i].newY};
+			if (!i.startsWith("."))
+			{
+				level.points[this.level.entities[i].name] = {"x": this.level.entities[i].newX, "y": this.level.entities[i].newY};
+			}
 		}
-		console.log(level.points);
 		level.palette = [];
 		for (var i = 0; i < this.level.palette.length; i++)
 		{
