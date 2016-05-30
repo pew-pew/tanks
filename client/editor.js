@@ -125,6 +125,35 @@ var EditorSession = function(width, height)
 		}
 	}
 	
+	this.handleKeys = function(event)
+	{
+		var focx = this.level.entities[".focus"].newX;
+		var focy = this.level.entities[".focus"].newY;
+		var toupdate = true;
+		switch (event.keyCode)
+		{
+			case 37:
+				focx--;
+				break;
+			case 38:
+				focy--;
+				break;
+			case 39:
+				focx++;
+				break;
+			case 40:
+				focy++;
+				break;
+			default:
+				toupdate = false;
+		}
+		if (toupdate && Math.min(this.width - focx, focx) * CELL_SIZE * 2 >= VIEWPORT_WIDTH && Math.min(this.height - focy, focy) * CELL_SIZE * 2 >= VIEWPORT_HEIGHT)
+		{
+			this.level.act(".focus", {"x": focx, "y": focy});
+		}
+	}
+
+	addEventListener("keydown", this.handleKeys.bind(this));
 	this.exportLevel = function()
 	{
 		var level = {};
