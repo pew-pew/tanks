@@ -154,19 +154,20 @@ var Entity = function(x, y, spriteURI)
 
 Level = function()
 {
-	this.palette = [];						// Array of tileset URIs used
-	this.tiles = [];						// The optimized form of palette, storing ready-to-use sprites
-	this.field = []; 						// The level's tile map
-	this.fieldUpdates = []; 					// Which tiles' neighbours to update
-	this.fieldStatus = []; 						// Adjacent tile bitmask for every tile - costly to update!
-	this.toUpdate = [];						// Which rows do we redraw
-	this.toUpdateNext = [];						// Which rows will we redraw next frame - used in case of drawing fault
-	this.entities = {};						// Dictionary of id-entity pairs
-	this.levelCanvas = document.createElement("canvas");		// Canvas that we're storing the level on
-	this.levelContext = this.levelCanvas.getContext("2d");		// The context of that canvas - would rather not find out every frame!
-	this.alive = true;						// Tells if this level is still relevant and should be bothered drawing
-	this.doDrawing = true;						// Tells if this level should be drawn, yet doesn't kill the draw loop
-	this.bgColor = DEFAULT_BG;					// What color is the background
+	this.palette = [];					// Array of tileset URIs used
+	this.tiles = [];					// The optimized form of palette, storing ready-to-use sprites
+	this.field = []; 					// The level's tile map
+	this.fieldUpdates = []; 				// Which tiles' neighbours to update
+	this.fieldStatus = []; 					// Adjacent tile bitmask for every tile - costly to update!
+	this.toUpdate = [];					// Which rows do we redraw
+	this.toUpdateNext = [];					// Which rows will we redraw next frame - used in case of drawing fault
+	this.entities = {};					// Dictionary of id-entity pairs
+	this.levelCanvas = document.createElement("canvas");	// Canvas that we're storing the level on
+	this.levelContext = this.levelCanvas.getContext("2d");	// The context of that canvas - would rather not find out every frame!
+	this.alive = true;					// Tells if this level is still relevant and should be bothered drawing
+	this.doDrawing = true;					// Tells if this level should be drawn, yet doesn't kill the draw loop
+	this.bgColor = DEFAULT_BG;				// What color is the background
+	this.scrollMode = true;					// Whether the screen needs scrolling or not - runs faster when false
 
 	// Makes entities act
 
@@ -380,17 +381,52 @@ Level = function()
 
 	this.draw = function(context)
 	{
-		this.drawLevel();
-		this.port(context);
+		if (this.scrollMode)
+		{
+			this.drawLevel();
+			this.port(context);
+		}
+		else
+		{
+			if (this.levelContext === undefined)
+			{
+				this.levelContext = context
+				this.levelContext.translate(-CELL_SIZE * this.entities[".focus"].oldX + VIEWPORT_WIDTH / 2, -CELL_SIZE * this.entities[".focus"].oldY + VIEWPORT_HEIGHT / 2);
+			}
+			this.drawLevel();
+		}
+	}
+
+	// Initializes the scrolling canvas
+
+	this.makeScrollingCanvas = function()
+	{
+		this.levelCanvas = document.createElement("canvas");
+		this.levelCanvas.width = this.field.length * CELL_SIZE;
+		this.levelCanvas.height = this.field[0].length * CELL_SIZE;
+		this.levelContext = this.levelCanvas.getContext("2d");
+	}
+
+	this.makeStaticCanvas = function()
+	{
+		this.levelContext = undefined;
+		if (!(".focus" in this.entities))
+		{
+			this.act(".focus", {"x": this.field.length / 2, "y": this.field[0].length / 2})
+		}
 	}
 
 	this.setField = function(map)
 	{
 		this.field = map;
-		this.levelCanvas = document.createElement("canvas");
-		this.levelCanvas.width = this.field.length * CELL_SIZE;
-		this.levelCanvas.height = this.field[0].length * CELL_SIZE;
-		this.levelContext = this.levelCanvas.getContext("2d");
+		if (this.scrollMode)
+		{
+			this.makeScrollingCanvas();
+		}
+		else
+		{
+			this.makeStaticCanvas();
+		}
 		this.toUpdate = [];
 		this.toUpdateNext = [];
 		for (var i = 0; i < this.field.length; i++)
@@ -398,12 +434,25 @@ Level = function()
 			this.fieldStatus[i] = [];
 			this.fieldUpdates[i] = [];
 			this.toUpdate[i] = true;
-			this.toUpdateNext[i] = false;
+			this.toUpdateNext[i] = true;
 			for (var j = 0; j < this.field[i].length; j++)
 			{
 				this.fieldStatus[i][j] = 0;
 				this.fieldUpdates[i][j] = true;
 			}
+		}
+	}
+
+	this.setScrollMode = function(scroll)
+	{
+		this.scrollMode = scroll;
+		if (scroll)
+		{
+			this.makeScrollingCanvas();
+		}
+		else
+		{
+			this.makeStaticCanvas();
 		}
 	}
 
