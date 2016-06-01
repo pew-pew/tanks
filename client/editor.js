@@ -74,8 +74,8 @@ var EditorSession = function(width, height)
 				if (!this.mouseWasDown)
 				{
 					this.level.act("point_" + this.pointNo, {"x": 
-					Math.floor(this.mouseX / CELL_SIZE), "y": 
-					Math.floor(this.mouseY / CELL_SIZE), "sprite": POINT_SPRITE});
+					Math.floor(this.mouseX / (5 * CELL_SIZE)) * 5 + 2, "y": 
+					Math.floor(this.mouseY / (5 * CELL_SIZE)) * 5 + 2, "sprite": POINT_SPRITE});
 					this.currentPoint = this.level.entities["point_" + this.pointNo]
 					this.currentPoint.name = "point_" + this.pointNo;
 					document.getElementById("pointName").value = "point_" + this.pointNo;
@@ -88,7 +88,7 @@ var EditorSession = function(width, height)
 				{
 					for (var i in this.level.entities)
 					{
-						if ((this.level.entities[i].newX == Math.floor(this.mouseX / CELL_SIZE)) && (this.level.entities[i].newY == Math.floor(this.mouseY / CELL_SIZE)))
+						if ((this.level.entities[i].newX == Math.floor(this.mouseX / (5 * CELL_SIZE))) * 5 + 2 && (this.level.entities[i].newY == Math.floor(this.mouseY / (5 * CELL_SIZE)) * 5 + 2))
 						{
 							this.level.remove(i);
 						}
