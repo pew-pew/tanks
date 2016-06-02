@@ -8,6 +8,8 @@ class BaseTankGame:
 	BULLET_MODULO = 100
 	SHOOT_SOUND = "resources/sounds/tankShot.wav"
 	EXPLODE_SOUND = "resources/sounds/tankExplode.wav"
+	VIEWPORT_WIDTH = 100
+	VIEWPORT_HEIGHT = 75
 
 	class Entity:
 		
@@ -361,9 +363,11 @@ class BaseTankGame:
 		response = {}
 		for i in user_inputs:
 			if i in self.tanks:
-				response[i] = json.dumps(self.baseResponse)
+				responseNow = copy.deepcopy(self.baseResponse)
+				responseNow["entities"][".focus"] = {"x": min(max(self.VIEWPORT_WIDTH / 2, responseNow["entities"][str(i)]["x"]), len(self.level["field"]) - self.VIEWPORT_WIDTH / 2), "y": min(max(self.VIEWPORT_HEIGHT / 2, responseNow["entities"][str(i)]["y"]), len(self.level["field"][0]) - self.VIEWPORT_HEIGHT / 2), "vel": responseNow["entities"][str(i)]["vel"]};
 			else:
 				spawn = self.get_spawn()
 				self.tanks[i] = self.Tank(self.level["spawns"][spawn].x, self.level["spawns"][spawn].y)
-				response[i] = json.dumps(self.deepResponse)
+				responseNow = copy.deepcopy(self.deepResponse)
+			response[i] = json.dumps(responseNow)
 		return response
