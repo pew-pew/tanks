@@ -114,6 +114,10 @@ var Session = function(URI)
 			this.canvas.style.marginTop = "0px";
 			this.canvas.style.marginLeft = "0px";
 		}
+		if ("scroll" in this.message)
+		{
+			this.level.setScrollMode(this.message["scroll"]);
+		}
 	}
 	onSocketError = function(event)
 	{

@@ -323,6 +323,8 @@ class BaseTankGame:
 	def do_tick(self, user_inputs):
 		self.baseResponse = {}
 		self.deepResponse = {"preload":{"images": ["resources/entities/tank0.png", "resources/entities/tank1.png", "resources/entities/tank2.png", "resources/entities/tank3.png"], "sounds": [self.SHOOT_SOUND, self.EXPLODE_SOUND]}}
+		if len(self.level["field"]) <= self.VIEWPORT_WIDTH and len(self.level["field"][0]) <= self.VIEWPORT_HEIGHT:
+			self.deepResponse["scroll"] = False
 		self.do_tank_tick(user_inputs)
 		self.do_bullet_tick(user_inputs)
 		entities = dict((str(tank), self.tanks[tank].act()) for tank in self.tanks)
@@ -364,7 +366,16 @@ class BaseTankGame:
 		for i in user_inputs:
 			if i in self.tanks:
 				responseNow = copy.deepcopy(self.baseResponse)
-				responseNow["entities"][".focus"] = {"x": min(max(self.VIEWPORT_WIDTH / 2, responseNow["entities"][str(i)]["x"]), len(self.level["field"]) - self.VIEWPORT_WIDTH / 2), "y": min(max(self.VIEWPORT_HEIGHT / 2, responseNow["entities"][str(i)]["y"]), len(self.level["field"][0]) - self.VIEWPORT_HEIGHT / 2), "vel": responseNow["entities"][str(i)]["vel"]};
+				responseNow["entities"][".focus"] = {}
+				if len(self.level["field"]) > self.VIEWPORT_WIDTH:
+					responseNow["entities"][".focus"]["x"] = min(max(self.VIEWPORT_WIDTH / 2, responseNow["entities"][str(i)]["x"]), len(self.level["field"]) - self.VIEWPORT_WIDTH / 2)
+				else:
+					responseNow["entities"][".focus"]["x"] = len(self.level["field"]) / 2
+
+				if len(self.level["field"][0]) > self.VIEWPORT_HEIGHT:
+					responseNow["entities"][".focus"]["y"] = min(max(self.VIEWPORT_HEIGHT / 2, responseNow["entities"][str(i)]["y"]), len(self.level["field"][0]) - self.VIEWPORT_HEIGHT / 2)
+				else:
+					responseNow["entities"][".focus"]["x"] = len(self.level["field"][0]) / 2
 			else:
 				spawn = self.get_spawn()
 				self.tanks[i] = self.Tank(self.level["spawns"][spawn].x, self.level["spawns"][spawn].y)

@@ -410,10 +410,6 @@ Level = function()
 	this.makeStaticCanvas = function()
 	{
 		this.levelContext = undefined;
-		if (!(".focus" in this.entities))
-		{
-			this.act(".focus", {"x": this.field.length / 2, "y": this.field[0].length / 2})
-		}
 	}
 
 	this.setField = function(map)
