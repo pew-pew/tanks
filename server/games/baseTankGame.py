@@ -60,7 +60,7 @@ class BaseTankGame:
 			self.x = x
 			self.y = y
 			self.timeout = 0
-			self.angle = 0
+			self.angle = 360
 			self.oldangle = 0
 			self.bulletcooldown = 0
 			self.dead = False

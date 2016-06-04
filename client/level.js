@@ -317,9 +317,9 @@ Level = function()
 		{
 			context.drawImage(this.tiles[mytype][this.fieldStatus[x][y]], (x + 1) * CELL_SIZE - this.tiles[mytype][this.fieldStatus[x][y]].width, (y + 1) * CELL_SIZE - this.tiles[mytype][this.fieldStatus[x][y]].height);
 		}
-		catch(err)
+		catch(e)
 		{
-			console.log(err);
+			console.log("Exception " + e + " when drawing tile");
 			this.toUpdateNext[x] = true;
 		}
 	}
@@ -391,7 +391,7 @@ Level = function()
 			if (this.levelContext === undefined)
 			{
 				this.levelContext = context
-				this.levelContext.translate(-CELL_SIZE * this.entities[".focus"].oldX + VIEWPORT_WIDTH / 2, -CELL_SIZE * this.entities[".focus"].oldY + VIEWPORT_HEIGHT / 2);
+				this.levelContext.translate(-CELL_SIZE * this.entities[".focus"].newX + VIEWPORT_WIDTH / 2, -CELL_SIZE * this.entities[".focus"].newY + VIEWPORT_HEIGHT / 2);
 			}
 			this.drawLevel();
 		}
