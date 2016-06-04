@@ -375,7 +375,8 @@ class BaseTankGame:
 				if len(self.level["field"][0]) > self.VIEWPORT_HEIGHT:
 					responseNow["entities"][".focus"]["y"] = min(max(self.VIEWPORT_HEIGHT / 2, responseNow["entities"][str(i)]["y"]), len(self.level["field"][0]) - self.VIEWPORT_HEIGHT / 2)
 				else:
-					responseNow["entities"][".focus"]["x"] = len(self.level["field"][0]) / 2
+					responseNow["entities"][".focus"]["y"] = len(self.level["field"][0]) / 2
+				responseNow["entities"][".focus"]["vel"] = responseNow["entities"][str(i)]["vel"]
 			else:
 				spawn = self.get_spawn()
 				self.tanks[i] = self.Tank(self.level["spawns"][spawn].x, self.level["spawns"][spawn].y)
