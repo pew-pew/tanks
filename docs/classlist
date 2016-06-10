@@ -1,0 +1,43 @@
+-- THESE ALL ARE JUST EARLY CONCEPTS. PLEASE REVIEW AND ADD/EDIT/REMOVE ACCORDINGLY --
+
+Classes list:
+
+	Format:
+	[NAME]
+	Primary ability: []
+	Secondary ability: []
+	Notes: []
+
+	Trackshooter
+	Primary ability: Shoots forwards once
+	Secondary ability: Car honk (tank honk?)
+	Notes: The most basic class. Suggestions for a better ability welcome, as long as they don't make the class any more complicated
+	A trackshooter can kill a trackshooter in one hit.
+
+	Dreadnaught
+	Primary ability: Shoots forwards from one of its three front-mounted cannons. The cannons fire in order 1-2-3-2-1-2-3-2...
+	Secondary ability: 
+	Notes: Is bigger than the average tank, rotates really slowly
+
+	Mortar
+	Primary ability: Fires a rather fast machine gun that has a short range. 
+	Secondary ability: Fires a high-damage bullet that flies in an arch over walls (and tanks, too)
+	Notes: 
+
+	Treacle
+	Primary ability: An assault rifle that fires in bursts of three, yet takes some time to reload
+	Secondary ability: Shoots a caltrop that slows enemy movement (and damages?) once moved over
+	Notes: 
+
+	Mongolian Ram
+	Primary ability: Dash in the movement direction. Dashing is fast; you're invulnerable while dashing; hitting an enemy while dashing deals damage.
+	Secondary ability: Push adjacent enemies away
+	Notes: Very fast
+
+	Crocodile
+	Primary ability: Pistol
+	Secondary ability: Machete
+	Notes: Arrow keys to toss meat. Crocodiles move only towards the closest meat.
+
+	//TODO more
+
